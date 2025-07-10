@@ -1,0 +1,15 @@
+*
+!build.gradle
+!settings.gradle
+!gradle/
+!gradlew
+!gradlew.bat
+!src/
+.git
+.gitignore
+README.md
+target/
+build/
+!target/quarkus-app/
+Dockerfile*
+.dockerignore

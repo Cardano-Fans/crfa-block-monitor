@@ -1,0 +1,41 @@
+[Unit]
+Description=Block Monitor Backend Service
+Documentation=https://github.com/cardano-foundation/block-monitor
+After=network.target
+Wants=network.target
+
+[Service]
+Type=exec
+User=block-monitor
+Group=block-monitor
+WorkingDirectory=/opt/block-monitor-backend
+ExecStart=/opt/block-monitor-backend/block-monitor-backend -Dquarkus.config.locations=application-crfa.yml
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=block-monitor-backend
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/block-monitor-backend
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RemoveIPC=true
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Environment
+Environment=JAVA_OPTS="-Xmx512m -Xms256m"
+
+[Install]
+WantedBy=multi-user.target

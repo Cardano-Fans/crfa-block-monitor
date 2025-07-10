@@ -1,0 +1,34 @@
+FROM quay.io/quarkus/ubi-quarkus-openjdk-21-builder-image:jdk-21 AS build
+
+# Copy the gradle wrapper and build files
+COPY gradle /code/gradle
+COPY gradlew /code/gradlew
+COPY build.gradle /code/build.gradle
+COPY settings.gradle /code/settings.gradle
+
+# Copy source code
+COPY src /code/src
+
+USER root
+RUN chown -R quarkus /code
+USER quarkus
+
+WORKDIR /code
+
+# Build the application
+RUN ./gradlew build -x test
+
+# Runtime stage
+FROM quay.io/quarkus/quarkus-openjdk-21-runtime:latest
+WORKDIR /work/
+
+# Copy the built application
+COPY --from=build /code/build/quarkus-app/lib/ /work/lib/
+COPY --from=build /code/build/quarkus-app/*.jar /work/
+COPY --from=build /code/build/quarkus-app/app/ /work/app/
+COPY --from=build /code/build/quarkus-app/quarkus/ /work/quarkus/
+
+EXPOSE 8080
+USER 1001
+
+ENTRYPOINT ["java", "-jar", "/work/quarkus-run.jar"]

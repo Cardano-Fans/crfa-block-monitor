@@ -1,0 +1,67 @@
+# Block Monitor Backend
+
+A Quarkus-based Java microservice that monitors Cardano block producer nodes and provides automatic failover capabilities.
+
+## Features
+
+- Health monitoring of primary and secondary Cardano nodes
+- Automatic DNS failover when primary node goes down
+- Manual switching between nodes with override capability
+- RESTful API for status and control
+- Configurable timing for failover/failback delays
+- Native image support with GraalVM for low resource consumption
+
+## Requirements
+
+- Java 21 LTS
+- Gradle 8.5+
+- Docker (for native image build)
+
+## Configuration
+
+Edit `src/main/resources/application.yml` to configure:
+
+- Server hostnames and ports
+- DNS API credentials
+- Timing settings for failover/failback
+- Logging configuration
+
+## Running
+
+### Development Mode
+```bash
+./gradlew quarkusDev
+```
+
+### Production JAR
+```bash
+./gradlew build
+java -jar build/quarkus-app/quarkus-run.jar
+```
+
+### Native Image
+```bash
+./gradlew build -Dquarkus.package.type=native
+./build/block-monitor-backend-1.0.0-runner
+```
+
+### Docker Native Image
+```bash
+docker build -f Dockerfile -t cardano/block-monitor-backend .
+docker run -p 8080:8080 cardano/block-monitor-backend
+```
+
+## API Endpoints
+
+- `GET /api/health` - Health check
+- `GET /api/status` - Get current monitoring status
+- `POST /api/control` - Start/stop monitoring
+- `POST /api/active` - Manual server switching
+
+## Monitoring
+
+The service runs a scheduled task every 60 seconds to check both primary and secondary nodes. When the primary node is down for more than the configured failover delay, it automatically switches DNS to the secondary node.
+
+## Building Native Image
+
+The native image is built using GraalVM 21 and produces a lightweight, fast-starting executable suitable for containers and resource-constrained environments.

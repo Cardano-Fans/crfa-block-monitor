@@ -1,0 +1,31 @@
+FROM quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:jdk-21 AS build
+
+# Copy the gradle wrapper and build files
+COPY gradle /code/gradle
+COPY gradlew /code/gradlew
+COPY build.gradle /code/build.gradle
+COPY settings.gradle /code/settings.gradle
+
+# Copy source code
+COPY src /code/src
+
+USER root
+RUN chown -R quarkus /code
+USER quarkus
+
+WORKDIR /code
+
+# Build the native executable
+RUN ./gradlew build -Dquarkus.native.enabled=true -Dquarkus.package.jar.enabled=false -x test
+
+# Runtime stage
+FROM quay.io/quarkus/quarkus-micro-image:2.0
+WORKDIR /work/
+COPY --from=build /code/build/block-monitor-backend-*-runner /work/application
+
+# Set up a non-root user
+RUN chmod 775 /work/application
+EXPOSE 8080
+USER 1001
+
+ENTRYPOINT ["./application", "-Dquarkus.http.host=0.0.0.0"]

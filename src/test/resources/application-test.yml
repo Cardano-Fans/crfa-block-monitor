@@ -1,0 +1,41 @@
+"%test":
+  quarkus:
+    application:
+      name: block-monitor-backend-test
+    http:
+      port: 8081
+      host: localhost
+    log:
+      level: INFO
+      console:
+        json: false
+    container-image:
+      build: false
+    rest-client:
+      name-com-api:
+        url: http://localhost:8082
+
+  monitor:
+    primary:
+      name: test-primary
+      host: 127.0.0.1
+      port: 9001
+    secondary:
+      name: test-secondary
+      host: 127.0.0.2
+      port: 9002
+    dns:
+      api-base-url: http://localhost:8082
+      username: test-user
+      password: test-password
+      domain: test.example.com
+      record-id: "12345"
+      record-host: test-record
+      record-fqdn: test-record.test.example.com.
+      record-type: A
+      record-ttl: 60
+    timing:
+      check-interval: 10s
+      failover-delay: 30s
+      failback-delay: 60s
+      connection-timeout: 2s
