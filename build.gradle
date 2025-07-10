@@ -9,8 +9,8 @@ repositories {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_24
+    targetCompatibility = JavaVersion.VERSION_24
 }
 
 dependencies {
@@ -52,6 +52,6 @@ compileTestJava {
 
 quarkus {
     buildForkOptions {
-        systemProperty 'quarkus.native.builder-image', 'quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:jdk-21'
+        systemProperty 'quarkus.native.builder-image', 'quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:jdk-24'
     }
 }

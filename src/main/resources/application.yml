@@ -7,14 +7,15 @@ quarkus:
   log:
     level: INFO
     console:
-      json: true
+      json:
+        enabled: true
   container-image:
     build: false
     group: cardano
     name: block-monitor-backend
     tag: ${quarkus.application.version:latest}
   native:
-    builder-image: quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:jdk-21
+    builder-image: quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:jdk-24
   rest-client:
     name-com-api:
       url: https://api.name.com
@@ -44,7 +45,13 @@ monitor:
     failback-delay: 600s
     connection-timeout: 10s
 
----
+
+'%test':
+  quarkus:
+    log:
+      console:
+        json:
+          enabled: false---
 "%test":
   quarkus:
     application:
@@ -55,7 +62,8 @@ monitor:
     log:
       level: INFO
       console:
-        json: false
+        json:
+          enabled: false
     container-image:
       build: false
     rest-client:
@@ -86,3 +94,8 @@ monitor:
       failover-delay: 30s
       failback-delay: 60s
       connection-timeout: 2s
+quarkus:
+  log:
+    console:
+      json:
+        enabled: true
