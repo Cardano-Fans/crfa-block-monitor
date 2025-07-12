@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'io.quarkus' version '3.16.4'
+    id 'com.github.node-gradle.node' version '7.1.0'
 }
 
 repositories {
@@ -55,3 +56,30 @@ quarkus {
         systemProperty 'quarkus.native.builder-image', 'quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:jdk-24'
     }
 }
+
+node {
+    version = '20.15.0'
+    npmVersion = '10.7.0'
+    workDir = file("${project.projectDir}/frontend")
+    npmWorkDir = file("${project.projectDir}/frontend")
+    nodeProjectDir = file("${project.projectDir}/frontend")
+}
+
+task frontendInstall(type: NpmTask) {
+    description = 'Install npm dependencies'
+    args = ['install']
+}
+
+task buildFrontend(type: NpmTask, dependsOn: frontendInstall) {
+    description = 'Build frontend application'
+    args = ['run', 'build']
+}
+
+task copyFrontendToResources(type: Copy, dependsOn: buildFrontend) {
+    description = 'Copy frontend build to Quarkus static resources'
+    from "${project.projectDir}/frontend/dist"
+    into "${project.projectDir}/src/main/resources/META-INF/resources"
+}
+
+processResources.dependsOn copyFrontendToResources
+build.dependsOn copyFrontendToResources

@@ -1,0 +1,20 @@
+quarkus:
+  log:
+    level: INFO
+    console:
+      json: false
+  http:
+    port: 8080
+    host: 0.0.0.0
+
+monitor:
+  dns:
+    username: dev-user
+    password: dev-password
+    record-id: dev-record-id
+    record-host: dev-host
+    record-fqdn: dev.localhost.com
+  timing:
+    check-interval: 10s
+    failover-delay: 30s
+    failback-delay: 60s

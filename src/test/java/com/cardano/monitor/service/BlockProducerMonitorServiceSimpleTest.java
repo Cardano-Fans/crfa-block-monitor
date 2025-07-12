@@ -154,9 +154,9 @@ class BlockProducerMonitorServiceSimpleTest {
         // Then
         assertEquals(ServerHealthStatus.DOWN, status.primaryStatus());
         assertEquals(ServerHealthStatus.DOWN, status.secondaryStatus());
-        assertEquals(ServerType.PRIMARY, status.currentActive());
-        // Initially, it should be waiting for failover, not immediately showing both servers down
-        assertEquals(NextAction.WAITING_FOR_FAILOVER, status.nextAction().getAction());
+        assertEquals(ServerType.NONE, status.currentActive());
+        // When both servers are down, should show both servers down status
+        assertEquals(NextAction.BOTH_SERVERS_DOWN, status.nextAction().getAction());
         assertNotNull(status.primaryDownSince());
     }
 
@@ -178,7 +178,6 @@ class BlockProducerMonitorServiceSimpleTest {
         
         ServerStatus status = monitorService.getStatus();
         assertEquals(ServerType.SECONDARY, status.currentActive());
-        assertTrue(status.manualOverride());
         verify(dnsService).switchDnsToServer(ServerType.SECONDARY);
     }
 
@@ -201,7 +200,6 @@ class BlockProducerMonitorServiceSimpleTest {
         
         ServerStatus status = monitorService.getStatus();
         assertEquals(ServerType.PRIMARY, status.currentActive());
-        assertTrue(status.manualOverride());
         verify(dnsService).switchDnsToServer(ServerType.PRIMARY);
     }
 
@@ -239,44 +237,7 @@ class BlockProducerMonitorServiceSimpleTest {
         verify(dnsService, never()).switchDnsToServer(any());
     }
 
-    @Test
-    @DisplayName("Should clear manual override")
-    // SCENARIO: Clearing manual override - returning to automatic monitoring after manual intervention
-    // Tests the ability to resume automatic failover/failback after manual control
-    void shouldClearManualOverride() {
-        // Given - Set manual override first
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
-        when(dnsService.switchDnsToServer(any())).thenReturn(true);
-        monitorService.manualSwitch(ServerType.SECONDARY);
 
-        // When
-        ApiResponse response = monitorService.clearManualOverride();
-
-        // Then
-        assertTrue(response.success());
-        assertEquals("Manual override cleared", response.message());
-        
-        ServerStatus status = monitorService.getStatus();
-        assertFalse(status.manualOverride());
-    }
-
-    @Test
-    @DisplayName("Should show manual override active in status")
-    // SCENARIO: Manual override status reporting - verifying that manual mode is correctly indicated
-    // Tests that the system correctly reports manual override state in status responses
-    void shouldShowManualOverrideActiveInStatus() {
-        // Given - Set manual override
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
-        when(dnsService.switchDnsToServer(any())).thenReturn(true);
-        monitorService.manualSwitch(ServerType.SECONDARY);
-
-        // When
-        ServerStatus status = monitorService.checkServers();
-
-        // Then
-        assertEquals(NextAction.MANUAL_OVERRIDE_ACTIVE, status.nextAction().getAction());
-        assertTrue(status.manualOverride());
-    }
 
     @Test
     @DisplayName("Should handle network service exceptions gracefully")
@@ -336,11 +297,72 @@ class BlockProducerMonitorServiceSimpleTest {
         // Then
         assertEquals(status1.currentActive(), status2.currentActive());
         assertEquals(status2.currentActive(), status3.currentActive());
-        assertEquals(status1.manualOverride(), status2.manualOverride());
-        assertEquals(status2.manualOverride(), status3.manualOverride());
         
         // Last check timestamps should be different
         assertTrue(status2.lastCheck().isAfter(status1.lastCheck()));
         assertTrue(status3.lastCheck().isAfter(status2.lastCheck()));
+    }
+
+    @Test
+    @DisplayName("Should favor primary over secondary")
+    // SCENARIO: Primary-first policy - when both servers are available, primary should always be active
+    // Tests that secondary is only used when primary is down
+    void shouldFavorPrimaryOverSecondary() {
+        // Given - Both servers are up
+        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class))).thenReturn(true);
+        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class))).thenReturn(true);
+        when(dnsService.switchDnsToServer(any())).thenReturn(true);
+
+        // When - Starting from NONE state (both servers down scenario)
+        monitorService.resetState(); // This sets currentActive to PRIMARY
+        ServerStatus status = monitorService.checkServers();
+
+        // Then - Should be using PRIMARY
+        assertEquals(ServerType.PRIMARY, status.currentActive());
+        assertEquals(NextAction.NONE, status.nextAction().getAction());
+    }
+
+    @Test
+    @DisplayName("Should switch from NONE to primary when primary comes up")
+    // SCENARIO: Recovery from total outage - primary server comes back online first
+    // Tests that system recovers to primary when it becomes available
+    void shouldSwitchFromNoneToPrimaryWhenPrimaryComesUp() {
+        // Given - Start with both servers down (NONE state)
+        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(false);
+        monitorService.checkServers(); // This should set currentActive to NONE
+        
+        // When - Primary comes up
+        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class))).thenReturn(true);
+        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class))).thenReturn(false);
+        when(dnsService.switchDnsToServer(ServerType.PRIMARY)).thenReturn(true);
+        
+        ServerStatus status = monitorService.checkServers();
+
+        // Then - Should switch to PRIMARY
+        assertEquals(ServerType.PRIMARY, status.currentActive());
+        assertEquals(NextAction.SWITCHED_TO_PRIMARY, status.nextAction().getAction());
+        verify(dnsService).switchDnsToServer(ServerType.PRIMARY);
+    }
+
+    @Test  
+    @DisplayName("Should prefer primary when both come up from NONE state")
+    // SCENARIO: Recovery from total outage - both servers come back online simultaneously
+    // Tests that primary is chosen when both are available after NONE state
+    void shouldPreferPrimaryWhenBothComeUpFromNone() {
+        // Given - Start with both servers down (NONE state)
+        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(false);
+        monitorService.checkServers(); // This should set currentActive to NONE
+        
+        // When - Both servers come up
+        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
+        when(dnsService.switchDnsToServer(ServerType.PRIMARY)).thenReturn(true);
+        
+        ServerStatus status = monitorService.checkServers();
+
+        // Then - Should choose PRIMARY (not SECONDARY)
+        assertEquals(ServerType.PRIMARY, status.currentActive());
+        assertEquals(NextAction.SWITCHED_TO_PRIMARY, status.nextAction().getAction());
+        verify(dnsService).switchDnsToServer(ServerType.PRIMARY);
+        verify(dnsService, never()).switchDnsToServer(ServerType.SECONDARY);
     }
 }

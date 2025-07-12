@@ -126,7 +126,6 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
         // Then
         assertTrue(response.success());
         assertEquals(ServerType.SECONDARY, status.currentActive());
-        assertTrue(status.manualOverride());
         
         // Verify DNS service was called
         verify(dnsService).switchDnsToServer(ServerType.SECONDARY);
@@ -151,7 +150,6 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
         assertFalse(response.success());
         assertEquals("Failed to switch to secondary server", response.message());
         assertEquals(ServerType.PRIMARY, status.currentActive());
-        assertFalse(status.manualOverride());
     }
 
     @Test
@@ -207,7 +205,6 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
                 Thread.sleep(150);
                 monitorService.manualSwitch(ServerType.SECONDARY);
                 Thread.sleep(150);
-                monitorService.clearManualOverride();
                 latch.countDown();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -267,8 +264,6 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
         // Then
         assertEquals(status1.currentActive(), status2.currentActive());
         assertEquals(status2.currentActive(), status3.currentActive());
-        assertEquals(status1.manualOverride(), status2.manualOverride());
-        assertEquals(status2.manualOverride(), status3.manualOverride());
         
         // Last check timestamps should be different
         assertTrue(status2.lastCheck().isAfter(status1.lastCheck()));

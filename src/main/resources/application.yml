@@ -7,8 +7,8 @@ quarkus:
   log:
     level: INFO
     console:
-      json:
-        enabled: true
+      json: false
+
   container-image:
     build: false
     group: cardano
@@ -31,12 +31,12 @@ monitor:
     port: ${MONITOR_SECONDARY_PORT:8000}
   dns:
     api-base-url: ${DNS_API_BASE_URL:https://api.name.com}
-    username: ${DNS_USERNAME:}
-    password: ${DNS_PASSWORD:}
+    username: ${DNS_USERNAME:dummy-user}
+    password: ${DNS_PASSWORD:dummy-password}
     domain: ${DNS_DOMAIN:example.com}
-    record-id: ${DNS_RECORD_ID:}
-    record-host: ${DNS_RECORD_HOST:}
-    record-fqdn: ${DNS_RECORD_FQDN:}
+    record-id: ${DNS_RECORD_ID:dummy-id}
+    record-host: ${DNS_RECORD_HOST:dummy-host}
+    record-fqdn: ${DNS_RECORD_FQDN:dummy.example.com}
     record-type: ${DNS_RECORD_TYPE:A}
     record-ttl: ${DNS_RECORD_TTL:300}
   timing:
@@ -50,8 +50,7 @@ monitor:
   quarkus:
     log:
       console:
-        json:
-          enabled: false---
+        json: false
 "%test":
   quarkus:
     application:
@@ -62,8 +61,7 @@ monitor:
     log:
       level: INFO
       console:
-        json:
-          enabled: false
+        json: false
     container-image:
       build: false
     rest-client:
@@ -94,8 +92,3 @@ monitor:
       failover-delay: 30s
       failback-delay: 60s
       connection-timeout: 2s
-quarkus:
-  log:
-    console:
-      json:
-        enabled: true

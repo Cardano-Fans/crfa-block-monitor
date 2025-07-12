@@ -15,13 +15,6 @@ public enum NextAction {
     NONE("none"),
     
     /**
-     * Manual override is active - automatic switching is disabled.
-     * The system will not perform any automatic failover/failback operations
-     * until the manual override is cleared.
-     */
-    MANUAL_OVERRIDE_ACTIVE("manual_override_active"),
-    
-    /**
      * Waiting for failover delay to expire before switching to secondary.
      * Primary server is down, secondary is available, but we're waiting
      * for the configured failover delay to prevent flapping.

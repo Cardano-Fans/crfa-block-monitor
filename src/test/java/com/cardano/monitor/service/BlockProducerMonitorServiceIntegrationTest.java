@@ -160,7 +160,6 @@ import static org.mockito.Mockito.*;
                 Thread.sleep(300);
                 monitorService.manualSwitch(ServerType.SECONDARY);
                 Thread.sleep(300);
-                monitorService.clearManualOverride();
                 Thread.sleep(300);
                 monitorService.manualSwitch(ServerType.PRIMARY);
                 latch.countDown();
@@ -211,7 +210,6 @@ import static org.mockito.Mockito.*;
                                 if (j % 3 == 0) monitorService.manualSwitch(ServerType.SECONDARY);
                             }
                             case 3 -> {
-                                if (j % 5 == 0) monitorService.clearManualOverride();
                             }
                         }
                         Thread.sleep(50);

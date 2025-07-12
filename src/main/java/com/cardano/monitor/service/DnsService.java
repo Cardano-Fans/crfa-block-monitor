@@ -23,10 +23,16 @@ public class DnsService {
     NameComApiClient nameComClient;
     
     public boolean switchDnsToServer(ServerType serverType) {
+        if (serverType == ServerType.NONE) {
+            log.error("Cannot switch DNS to NONE - no server specified");
+            return false;
+        }
+        
         try {
             MonitorConfig.ServerConfig serverConfig = switch (serverType) {
                 case PRIMARY -> config.primary();
                 case SECONDARY -> config.secondary();
+                case NONE -> throw new IllegalArgumentException("NONE is not a valid DNS target");
             };
             
             MonitorConfig.DnsConfig dnsConfig = config.dns();

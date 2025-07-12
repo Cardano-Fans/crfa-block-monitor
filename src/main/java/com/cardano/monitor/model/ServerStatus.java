@@ -11,7 +11,6 @@ public record ServerStatus(
     @JsonProperty("last_check") Instant lastCheck,
     @JsonProperty("primary_down_since") Instant primaryDownSince,
     @JsonProperty("primary_up_since") Instant primaryUpSince,
-    @JsonProperty("manual_override") boolean manualOverride,
     @JsonProperty("next_action") NextAction.WithContext nextAction,
     @JsonProperty("config") ConfigInfo config
 ) {

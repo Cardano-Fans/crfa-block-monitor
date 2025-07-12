@@ -37,11 +37,12 @@ public class MonitorResource {
 
         return Response.status(statusCode).entity(body).build();
     }
-    
+
     @GET
     @Path("/status")
     public StatusResponse status() {
         ServerStatus status = monitorService.checkServers();
+
         return new StatusResponse(Instant.now(), status);
     }
     
@@ -59,15 +60,11 @@ public class MonitorResource {
     @POST
     @Path("/active")
     public ApiResponse active(@Valid ActiveRequest request) {
-        if (request.action() == MonitorAction.CLEAR_OVERRIDE) {
-            return monitorService.clearManualOverride();
-        }
-
         if (request.active() != null) {
             return monitorService.manualSwitch(request.active());
         }
 
-        return ApiResponse.error("Invalid request. Use 'ACTIVE' field with 'PRIMARY' or 'SECONDARY', or 'ACTION' field with 'CLEAR_OVERRIDE'");
+        return ApiResponse.error("Invalid request. Use 'ACTIVE' field with 'PRIMARY' or 'SECONDARY'");
    }
 
 }

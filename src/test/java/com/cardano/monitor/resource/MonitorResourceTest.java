@@ -208,7 +208,6 @@ class MonitorResourceTest {
             Instant.now(),
             null,
             null,
-            false,
             NextAction.NONE.withoutContext(),
             new ServerStatus.ConfigInfo(
                 new ServerStatus.ServerInfo("test-primary", "127.0.0.1", 9001),

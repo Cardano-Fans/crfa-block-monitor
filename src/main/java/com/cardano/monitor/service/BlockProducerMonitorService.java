@@ -31,7 +31,6 @@ public class BlockProducerMonitorService {
     private final AtomicReference<Instant> primaryDownSince = new AtomicReference<>();
     private final AtomicReference<Instant> primaryUpSince = new AtomicReference<>();
     private final AtomicReference<Instant> lastCheck = new AtomicReference<>(Instant.now());
-    private final AtomicBoolean manualOverride = new AtomicBoolean(false);
     private final AtomicReference<NextAction.WithContext> lastNextAction = new AtomicReference<>(NextAction.NONE.withoutContext());
     
     @Scheduled(every = "60s")
@@ -40,7 +39,7 @@ public class BlockProducerMonitorService {
             checkServers();
         }
     }
-    
+
     public ServerStatus checkServers() {
         log.info("Checking servers..., currentActive: {}", currentActive.get());
 
@@ -99,7 +98,6 @@ public class BlockProducerMonitorService {
             currentTime,
             primaryDownSince.get(),
             primaryUpSince.get(),
-            manualOverride.get(),
             nextAction,
             new ServerStatus.ConfigInfo(
                 new ServerStatus.ServerInfo(
@@ -119,12 +117,18 @@ public class BlockProducerMonitorService {
     private NextAction.WithContext checkNextAction(boolean primaryUp, Instant currentTime, boolean secondaryUp) {
         var nextAction = NextAction.NONE.withoutContext();
 
-        if (!manualOverride.get()) {
-            ServerType current = currentActive.get();
+        ServerType current = currentActive.get();
 
-            if (current == ServerType.PRIMARY) {
-                // Currently using primary
-                if (!primaryUp && primaryDownSince.get() != null) {
+        if (current == ServerType.PRIMARY) {
+            // Currently using primary
+            if (!primaryUp) {
+                if (!secondaryUp) {
+                    // Both servers are down - set to NONE immediately
+                    log.error("Both primary and secondary servers are down!");
+
+                    currentActive.set(ServerType.NONE);
+                    nextAction = NextAction.BOTH_SERVERS_DOWN.withoutContext();
+                } else if (primaryDownSince.get() != null) {
                     Duration downDuration = Duration.between(primaryDownSince.get(), currentTime);
                     if (downDuration.compareTo(config.timing().failoverDelay()) >= 0) {
                         if (secondaryUp) {
@@ -137,6 +141,7 @@ public class BlockProducerMonitorService {
                             }
                         } else {
                             log.error("Primary down but secondary also unavailable!");
+                            currentActive.set(ServerType.NONE);
                             nextAction = NextAction.BOTH_SERVERS_DOWN.withoutContext();
                         }
                     } else {
@@ -144,29 +149,56 @@ public class BlockProducerMonitorService {
                         nextAction = NextAction.WAITING_FOR_FAILOVER.withRemainingTime(remaining);
                     }
                 }
-            } else if (current == ServerType.SECONDARY) {
-                // Currently using secondary
-                if (primaryUp && primaryUpSince.get() != null) {
-                    Duration upDuration = Duration.between(primaryUpSince.get(), currentTime);
-                    if (upDuration.compareTo(config.timing().failbackDelay()) >= 0) {
-                        log.info("Primary up for {}, switching back to primary", upDuration);
-                        if (dnsService.switchDnsToServer(ServerType.PRIMARY)) {
-                            currentActive.set(ServerType.PRIMARY);
-                            nextAction = NextAction.SWITCHED_TO_PRIMARY.withoutContext();
-                        } else {
-                            nextAction = NextAction.FAILED_TO_SWITCH_TO_PRIMARY.withoutContext();
-                        }
-                    } else {
-                        long remaining = config.timing().failbackDelay().minus(upDuration).getSeconds();
-                        nextAction = NextAction.WAITING_FOR_FAILBACK.withRemainingTime(remaining);
-                    }
-                } else if (!secondaryUp) {
+            }
+        } else if (current == ServerType.SECONDARY) {
+            // Currently using secondary
+            if (!secondaryUp) {
+                if (!primaryUp) {
+                    // Both servers are down - set to NONE immediately
+                    log.error("Both primary and secondary servers are down!");
+                    currentActive.set(ServerType.NONE);
+                    nextAction = NextAction.BOTH_SERVERS_DOWN.withoutContext();
+                } else {
                     log.error("Secondary server is down!");
+                    currentActive.set(ServerType.NONE);
                     nextAction = NextAction.SECONDARY_SERVER_DOWN.withoutContext();
                 }
+            } else if (primaryUp && primaryUpSince.get() != null) {
+                Duration upDuration = Duration.between(primaryUpSince.get(), currentTime);
+                if (upDuration.compareTo(config.timing().failbackDelay()) >= 0) {
+                    log.info("Primary up for {}, switching back to primary", upDuration);
+                    if (dnsService.switchDnsToServer(ServerType.PRIMARY)) {
+                        currentActive.set(ServerType.PRIMARY);
+                        nextAction = NextAction.SWITCHED_TO_PRIMARY.withoutContext();
+                    } else {
+                        nextAction = NextAction.FAILED_TO_SWITCH_TO_PRIMARY.withoutContext();
+                    }
+                } else {
+                    long remaining = config.timing().failbackDelay().minus(upDuration).getSeconds();
+                    nextAction = NextAction.WAITING_FOR_FAILBACK.withRemainingTime(remaining);
+                }
             }
-        } else {
-            nextAction = NextAction.MANUAL_OVERRIDE_ACTIVE.withoutContext();
+        } else if (current == ServerType.NONE) {
+            // Currently no active server - check if any server is available
+            if (primaryUp) {
+                log.info("Primary server available, switching from NONE to primary");
+                if (dnsService.switchDnsToServer(ServerType.PRIMARY)) {
+                    currentActive.set(ServerType.PRIMARY);
+                    nextAction = NextAction.SWITCHED_TO_PRIMARY.withoutContext();
+                } else {
+                    nextAction = NextAction.FAILED_TO_SWITCH_TO_PRIMARY.withoutContext();
+                }
+            } else if (secondaryUp) {
+                log.info("Secondary server available, switching from NONE to secondary");
+                if (dnsService.switchDnsToServer(ServerType.SECONDARY)) {
+                    currentActive.set(ServerType.SECONDARY);
+                    nextAction = NextAction.SWITCHED_TO_SECONDARY.withoutContext();
+                } else {
+                    nextAction = NextAction.FAILED_TO_SWITCH_TO_SECONDARY.withoutContext();
+                }
+            } else {
+                nextAction = NextAction.BOTH_SERVERS_DOWN.withoutContext();
+            }
         }
 
         return nextAction;
@@ -198,6 +230,10 @@ public class BlockProducerMonitorService {
     }
     
     public ApiResponse manualSwitch(ServerType targetServer) {
+        if (targetServer == ServerType.NONE) {
+            return ApiResponse.error("Cannot manually switch to NONE. Use specific server type.");
+        }
+        
         if (targetServer == currentActive.get()) {
             return ApiResponse.error(String.format("Already using %s server", targetServer.name().toLowerCase()));
         }
@@ -223,7 +259,6 @@ public class BlockProducerMonitorService {
         // Perform the switch
         if (dnsService.switchDnsToServer(targetServer)) {
             currentActive.set(targetServer);
-            manualOverride.set(true);
             // Reset timing tracking when manual switch occurs
             primaryDownSince.set(null);
             primaryUpSince.set(null);
@@ -232,20 +267,12 @@ public class BlockProducerMonitorService {
             return ApiResponse.error(String.format("Failed to switch to %s server", targetServer.name().toLowerCase()));
         }
     }
-    
-    public ApiResponse clearManualOverride() {
-        manualOverride.set(false);
-        log.info("Manual override cleared, resuming automatic monitoring");
 
-        return ApiResponse.success("Manual override cleared");
-    }
-    
     public void resetState() {
         running.set(true);
         currentActive.set(ServerType.PRIMARY);
         primaryDownSince.set(null);
         primaryUpSince.set(null);
-        manualOverride.set(false);
         lastNextAction.set(NextAction.NONE.withoutContext());
         lastCheck.set(Instant.now());
     }
@@ -259,7 +286,6 @@ public class BlockProducerMonitorService {
             lastCheck.get(),
             primaryDownSince.get(),
             primaryUpSince.get(),
-            manualOverride.get(),
             lastNextAction.get(),
             new ServerStatus.ConfigInfo(
                 new ServerStatus.ServerInfo(

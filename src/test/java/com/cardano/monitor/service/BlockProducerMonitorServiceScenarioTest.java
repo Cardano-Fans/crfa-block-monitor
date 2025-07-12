@@ -154,25 +154,20 @@ class BlockProducerMonitorServiceScenarioTest {
         ServerStatus afterManualSwitch = monitorService.checkServers();
 
         // Then: System should be in manual override mode
-        assertEquals(NextAction.MANUAL_OVERRIDE_ACTIVE, afterManualSwitch.nextAction().getAction());
+        assertEquals(NextAction.NONE, afterManualSwitch.nextAction().getAction());
         assertEquals(ServerType.SECONDARY, afterManualSwitch.currentActive());
-        assertTrue(afterManualSwitch.manualOverride());
 
         // Primary goes down during maintenance - should not automatically switch back
         when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
             .thenReturn(false);
 
         ServerStatus duringMaintenance = monitorService.checkServers();
-        assertEquals(NextAction.MANUAL_OVERRIDE_ACTIVE, duringMaintenance.nextAction().getAction());
+        assertEquals(NextAction.NONE, duringMaintenance.nextAction().getAction());
         assertEquals(ServerType.SECONDARY, duringMaintenance.currentActive());
         assertEquals(ServerHealthStatus.DOWN, duringMaintenance.primaryStatus());
 
-        // Administrator clears manual override after maintenance
-        ApiResponse clearOverrideResponse = monitorService.clearManualOverride();
-        assertTrue(clearOverrideResponse.success());
-
+        // Continue monitoring (no manual override to clear)
         ServerStatus afterClearOverride = monitorService.checkServers();
-        assertFalse(afterClearOverride.manualOverride());
         // Should not immediately switch back due to primary being down, secondary is stable
         assertEquals(NextAction.NONE, afterClearOverride.nextAction().getAction());
     }
@@ -202,7 +197,6 @@ class BlockProducerMonitorServiceScenarioTest {
             // Should succeed for other server types
             assertTrue(response.success());
             assertEquals(targetServer, monitorService.getStatus().currentActive());
-            assertTrue(monitorService.getStatus().manualOverride());
             verify(dnsService).switchDnsToServer(targetServer);
         }
     }

@@ -1,0 +1,15 @@
+quarkus:
+  log:
+    level: DEBUG
+    console:
+      json: false
+
+monitor:
+  dns:
+    username: local-dev-user
+    password: local-dev-password
+    record-id: local-dev-id
+    record-host: local-dev-host
+    record-fqdn: local.dev.com
+  timing:
+    check-interval: 5s
