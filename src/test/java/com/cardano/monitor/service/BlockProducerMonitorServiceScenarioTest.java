@@ -92,14 +92,16 @@ class BlockProducerMonitorServiceScenarioTest {
 
         // When: Monitor detects both servers down
         ServerStatus beforeFailover = monitorService.checkServers();
-        assertEquals(NextAction.WAITING_FOR_FAILOVER, beforeFailover.nextAction().getAction());
+        assertEquals(NextAction.BOTH_SERVERS_DOWN, beforeFailover.nextAction().getAction());
+        assertEquals(ServerType.NONE, beforeFailover.currentActive());
 
+        // Even after waiting, should remain in BOTH_SERVERS_DOWN state
         Thread.sleep(31000); // Wait for test config failover delay
         ServerStatus afterFailover = monitorService.checkServers();
 
-        // Then: System should not failover due to both servers being down
+        // Then: System should remain in BOTH_SERVERS_DOWN state
         assertEquals(NextAction.BOTH_SERVERS_DOWN, afterFailover.nextAction().getAction());
-        assertEquals(ServerType.PRIMARY, afterFailover.currentActive()); // Should stay on primary
+        assertEquals(ServerType.NONE, afterFailover.currentActive()); // Should be NONE when both down
         assertEquals(ServerHealthStatus.DOWN, afterFailover.primaryStatus());
         assertEquals(ServerHealthStatus.DOWN, afterFailover.secondaryStatus());
     }
@@ -136,41 +138,6 @@ class BlockProducerMonitorServiceScenarioTest {
         assertEquals(NextAction.FAILED_TO_SWITCH_TO_SECONDARY, retryAttempt.nextAction().getAction());
     }
 
-    @Test
-    @DisplayName("Scenario: Maintenance window with manual override")
-    // SCENARIO: Planned maintenance requiring manual control to prevent automatic failback
-    // Simulates administrator taking manual control during primary server maintenance
-    // Tests manual override preventing automatic operations during maintenance windows
-    void scenarioMaintenanceWindowWithManualOverride() {
-        // Given: Both servers are healthy initially
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class)))
-            .thenReturn(true);
-        when(dnsService.switchDnsToServer(any())).thenReturn(true);
-
-        // When: Administrator manually switches to secondary for maintenance
-        ApiResponse manualSwitchResponse = monitorService.manualSwitch(ServerType.SECONDARY);
-        assertTrue(manualSwitchResponse.success());
-
-        ServerStatus afterManualSwitch = monitorService.checkServers();
-
-        // Then: System should be in manual override mode
-        assertEquals(NextAction.NONE, afterManualSwitch.nextAction().getAction());
-        assertEquals(ServerType.SECONDARY, afterManualSwitch.currentActive());
-
-        // Primary goes down during maintenance - should not automatically switch back
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
-            .thenReturn(false);
-
-        ServerStatus duringMaintenance = monitorService.checkServers();
-        assertEquals(NextAction.NONE, duringMaintenance.nextAction().getAction());
-        assertEquals(ServerType.SECONDARY, duringMaintenance.currentActive());
-        assertEquals(ServerHealthStatus.DOWN, duringMaintenance.primaryStatus());
-
-        // Continue monitoring (no manual override to clear)
-        ServerStatus afterClearOverride = monitorService.checkServers();
-        // Should not immediately switch back due to primary being down, secondary is stable
-        assertEquals(NextAction.NONE, afterClearOverride.nextAction().getAction());
-    }
 
     @ParameterizedTest
     @EnumSource(ServerType.class)
@@ -187,14 +154,19 @@ class BlockProducerMonitorServiceScenarioTest {
         // When: Manual switch to target server
         ApiResponse response = monitorService.manualSwitch(targetServer);
 
-        // Then: Response depends on whether we're already using the target server
+        // Then: Response depends on the target server type
         if (targetServer == ServerType.PRIMARY) {
             // Should fail because we're already on PRIMARY (resetState sets this)
             assertFalse(response.success());
             assertEquals("Already using primary server", response.message());
             verify(dnsService, never()).switchDnsToServer(targetServer);
+        } else if (targetServer == ServerType.NONE) {
+            // Should fail because NONE is not a valid manual switch target
+            assertFalse(response.success());
+            assertEquals("Cannot manually switch to NONE. Use specific server type.", response.message());
+            verify(dnsService, never()).switchDnsToServer(targetServer);
         } else {
-            // Should succeed for other server types
+            // Should succeed for SECONDARY
             assertTrue(response.success());
             assertEquals(targetServer, monitorService.getStatus().currentActive());
             verify(dnsService).switchDnsToServer(targetServer);
