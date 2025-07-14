@@ -63,10 +63,10 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading monitor status...</p>
+          <div className="loading-spinner mx-auto mb-4"></div>
+          <p className="text-lg" style={{ color: 'var(--text-secondary)' }}>Loading monitor status...</p>
         </div>
       </div>
     );
@@ -74,11 +74,11 @@ export default function App() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-600 text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Error</h2>
+          <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>{error}</p>
           <button
             onClick={fetchStatus}
             className="btn btn-primary"
@@ -107,49 +107,44 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-4">
-      <div className="container mx-auto px-4 max-w-6xl">
-        {/* Header */}
-        <div className="text-center mb-4">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+    <div className="min-h-screen py-8">
+      <div className="header">
+        <div className="container">
+          <h1 className="h1-example">
             Block Producer Monitor
           </h1>
-          <div className="d-flex justify-content-center align-items-center gap-3 text-sm text-gray-600">
-            <span>Last updated: {lastUpdate?.toLocaleTimeString()}</span>
+          <p className="body-example">
+            Real-time monitoring and failover management for Cardano infrastructure
+          </p>
+          <div className="flex justify-center items-center gap-4 mt-4">
+            <span className="small-example">
+              Last updated: {lastUpdate?.toLocaleTimeString()}
+            </span>
             <button onClick={fetchStatus} className="btn btn-primary btn-sm">
-              Refresh
+              🔄 Refresh
             </button>
           </div>
         </div>
+      </div>
 
+      <div className="container">
         {/* 2x2 Grid Layout */}
-        <div className="row g-3">
-          {/* Row 1 */}
-          <div className="col-12 col-lg-6">
-            <ServerCard
-              server={primaryServer}
-              isActive={status.current_active === 'PRIMARY'}
-              onSwitch={handleSwitch}
-            />
-          </div>
-          <div className="col-12 col-lg-6">
-            <ServerCard
-              server={secondaryServer}
-              isActive={status.current_active === 'SECONDARY'}
-              onSwitch={handleSwitch}
-            />
-          </div>
-          
-          {/* Row 2 */}
-          <div className="col-12 col-lg-6">
-            <StatusCard
-              status={status}
-              onStartStop={handleStartStop}
-            />
-          </div>
-          <div className="col-12 col-lg-6">
-            <LogsCard status={status} />
-          </div>
+        <div className="grid grid-cols-2">
+          <ServerCard
+            server={primaryServer}
+            isActive={status.current_active === 'PRIMARY'}
+            onSwitch={handleSwitch}
+          />
+          <ServerCard
+            server={secondaryServer}
+            isActive={status.current_active === 'SECONDARY'}
+            onSwitch={handleSwitch}
+          />
+          <StatusCard
+            status={status}
+            onStartStop={handleStartStop}
+          />
+          <LogsCard status={status} />
         </div>
       </div>
     </div>

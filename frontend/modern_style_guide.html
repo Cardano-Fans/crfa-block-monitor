@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBI Style Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Color Palette - Inspired by Alethea.io */
+            --primary-bg: #f8fafc;
+            --secondary-bg: #ffffff;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --border-light: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-blue-light: #60a5fa;
+            --accent-blue-dark: #1d4ed8;
+            --success-green: #22c55e;
+            --warning-orange: #f59e0b;
+            --error-red: #ef4444;
+            --cardano-blue: #0033ad;
+            --ada-accent: #00d4ff;
+            
+            /* Typography */
+            --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            --font-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            
+            /* Spacing */
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-2xl: 3rem;
+            --spacing-3xl: 4rem;
+            
+            /* Border Radius */
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            font-family: var(--font-primary);
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-lg);
+        }
+
+        /* Header */
+        .header {
+            background: var(--secondary-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: var(--spacing-xl) 0;
+            margin-bottom: var(--spacing-3xl);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .header p {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Navigation */
+        .nav {
+            background: var(--secondary-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: var(--spacing-md) 0;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .nav-list {
+            display: flex;
+            gap: var(--spacing-xl);
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-item {
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        /* Section Styling */
+        .section {
+            margin-bottom: var(--spacing-3xl);
+        }
+
+        .section-header {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .section h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+
+        .section p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Color Palette */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .color-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+
+        .color-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .color-swatch {
+            width: 100%;
+            height: 80px;
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-md);
+            border: 1px solid var(--border-light);
+        }
+
+        .color-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: var(--spacing-xs);
+            color: var(--text-primary);
+        }
+
+        .color-code {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: var(--primary-bg);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+        }
+
+        /* Typography */
+        .type-scale {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .type-example {
+            margin-bottom: var(--spacing-lg);
+            padding: var(--spacing-lg);
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .type-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .h1-example { font-size: 2.5rem; font-weight: 700; line-height: 1.2; }
+        .h2-example { font-size: 1.875rem; font-weight: 700; line-height: 1.3; }
+        .h3-example { font-size: 1.5rem; font-weight: 600; line-height: 1.4; }
+        .h4-example { font-size: 1.25rem; font-weight: 600; line-height: 1.4; }
+        .body-example { font-size: 1rem; font-weight: 400; line-height: 1.6; }
+        .small-example { font-size: 0.875rem; font-weight: 400; line-height: 1.5; }
+
+        /* Buttons */
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border: 1px solid transparent;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-blue-dark);
+            border-color: var(--accent-blue-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-bg);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary-bg);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+
+        .btn-outline:hover {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        /* Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+
+        .card-content {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Data Tables */
+        .table-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            background: var(--primary-bg);
+            padding: var(--spacing-md) var(--spacing-lg);
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table td {
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.875rem;
+        }
+
+        .table tr:hover {
+            background: rgba(59, 130, 246, 0.02);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Form Elements */
+        .form-grid {
+            display: grid;
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .form-group {
+            display: grid;
+            gap: var(--spacing-sm);
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .form-input {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: var(--font-primary);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Code Block */
+        .code-block {
+            background: var(--text-primary);
+            color: #e2e8f0;
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            overflow-x: auto;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-primary {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-blue);
+        }
+
+        .badge-success {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success-green);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-orange);
+        }
+
+        /* Cardano Specific */
+        .ada-symbol {
+            color: var(--cardano-blue);
+            font-weight: 600;
+        }
+
+        .cardano-accent {
+            color: var(--ada-accent);
+        }
+
+        /* Layout Grid */
+        .layout-demo {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: var(--spacing-xl);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .main-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-xl);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .sidebar {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: var(--spacing-md);
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .nav-list {
+                flex-direction: column;
+                gap: var(--spacing-sm);
+            }
+            
+            .layout-demo {
+                grid-template-columns: 1fr;
+            }
+            
+            .color-grid,
+            .button-grid,
+            .card-grid,
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Loading States */
+        .skeleton {
+            background: linear-gradient(90deg, var(--border-light) 25%, var(--border-color) 50%, var(--border-light) 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>CBI Style Guide</h1>
+            <p>A clean, professional design system for blockchain analytics and data visualization platforms</p>
+        </div>
+    </div>
+
+    <div class="nav">
+        <div class="container">
+            <nav class="nav-list">
+                <a href="#" class="nav-item active">Home</a>
+                <a href="#" class="nav-item">Analytics</a>
+                <a href="#" class="nav-item">Blocks</a>
+                <a href="#" class="nav-item">Transactions</a>
+                <a href="#" class="nav-item">Pools</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Color Palette -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>Color Palette</h2>
+                <p>Clean, professional colors optimized for data readability and accessibility</p>
+            </div>
+            <div class="color-grid">
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #f8fafc;"></div>
+                    <div class="color-name">Primary Background</div>
+                    <div class="color-code">#f8fafc</div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #ffffff;"></div>
+                    <div class="color-name">Card Background</div>
+                    <div class="color-code">#ffffff</div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #e2e8f0;"></div>
+                    <div class="color-name">Border Color</div>
+                    <div class="color-code">#e2e8f0</div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #1e293b;"></div>
+                    <div class="color-name">Text Primary</div>
+                    <div class="color-code">#1e293b</div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #64748b;"></div>
+                    <div class="color-name">Text Secondary</div>
+                    <div class="color-code">#64748b</div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #3b82f6;"></div>
+                    <div class="color-name">Accent Blue</div>
+                    <div class="color-code">#3b82f6</div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #0033ad;"></div>
+                    <div class="color-name">Cardano Blue</div>
+                    <div class="color-code">#0033ad</div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #00d4ff;"></div>
+                    <div class="color-name">ADA Accent</div>
+                    <div class="color-code">#00d4ff</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Typography -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>Typography</h2>
+                <p>System font stack for optimal readability across all platforms</p>
+            </div>
+            <div class="type-scale">
+                <div class="type-example">
+                    <div class="type-label">H1 - Page Title</div>
+                    <div class="h1-example">Unlock the Power of Cardano Analytics</div>
+                </div>
+                <div class="type-example">
+                    <div class="type-label">H2 - Section Heading</div>
+                    <div class="h2-example">Latest Transactions</div>
+                </div>
+                <div class="type-example">
+                    <div class="type-label">H3 - Subsection</div>
+                    <div class="h3-example">Network Statistics</div>
+                </div>
+                <div class="type-example">
+                    <div class="type-label">H4 - Card Title</div>
+                    <div class="h4-example">Active Stake</div>
+                </div>
+                <div class="type-example">
+                    <div class="type-label">Body Text</div>
+                    <div class="body-example">Explore on-chain activity, track your portfolio, and discover the future of decentralized finance.</div>
+                </div>
+                <div class="type-example">
+                    <div class="type-label">Small Text</div>
+                    <div class="small-example">Transaction fees and network data</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>Statistics Cards</h2>
+                <p>Key metrics display for blockchain analytics</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value"><span class="ada-symbol">₳</span>0.47</div>
+                    <div class="stat-label">Ada Price</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">71.2%</div>
+                    <div class="stat-label">Active Stake</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">24%</div>
+                    <div class="stat-label">Expected APY</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">95,847</div>
+                    <div class="stat-label">Total Blocks</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>Buttons</h2>
+                <p>Clean, accessible button styles for various actions</p>
+            </div>
+            <div class="button-grid">
+                <button class="btn btn-primary">View All Blocks</button>
+                <button class="btn btn-secondary">Export Data</button>
+                <button class="btn btn-outline">Learn More</button>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>Data Tables</h2>
+                <p>Clean, scannable tables for blockchain data display</p>
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Transaction</th>
+                            <th>Inputs / Outputs</th>
+                            <th>Total Output</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <code style="font-size: 0.8rem; color: var(--accent-blue);">8f2e4c...9a1b</code>
+                            </td>
+                            <td>2 / 3</td>
+                            <td><span class="ada-symbol">₳</span> 1,247.50</td>
+                            <td><span class="badge badge-success">Confirmed</span></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <code style="font-size: 0.8rem; color: var(--accent-blue);">7d1a3b...5f8e</code>
+                            </td>
+                            <td>1 / 2</td>
+                            <td><span class="ada-symbol">₳</span> 892.33</td>
+                            <td><span class="badge badge-success">Confirmed</span></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <code style="font-size: 0.8rem; color: var(--accent-blue);">3c9f2a...8e4d</code>
+                            </td>
+                            <td>3 / 1</td>
+                            <td><span class="ada-symbol">₳</span> 2,156.78</td>
+                            <td><span class="badge badge-warning">Pending</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Cards -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>Cards</h2>
+                <p>Information cards with subtle shadows and hover effects</p>
+            </div>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-title">Network Health</div>
+                    <div class="card-content">Current network status shows optimal performance with 99.8% uptime and healthy block production rates.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Stake Pool Analysis</div>
+                    <div class="card-content">Comprehensive analysis of stake pool performance, delegation patterns, and reward distribution across the network.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Transaction Metrics</div>
+                    <div class="card-content">Real-time transaction monitoring with detailed fee analysis and throughput statistics for network optimization.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Elements -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>Form Elements</h2>
+                <p>Clean, accessible form controls for user input</p>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Wallet Address</label>
+                    <input type="text" class="form-input" placeholder="Enter Cardano wallet address">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Search Transactions</label>
+                    <input type="search" class="form-input" placeholder="Transaction hash or block number">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Time Range</label>
+                    <select class="form-input">
+                        <option>Last 24 hours</option>
+                        <option>Last 7 days</option>
+                        <option>Last 30 days</option>
+                        <option>Custom range</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Layout Demo -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>Layout Structure</h2>
+                <p>Typical page layout with main content and sidebar</p>
+            </div>
+            <div class="layout-demo">
+                <div class="main-content">
+                    <h3>Main Content Area</h3>
+                    <p>This is where the primary content would be displayed, such as transaction lists, block details, or analytical charts.</p>
+                    <div class="stats-grid" style="margin-top: var(--spacing-lg);">
+                        <div class="stat-card">
+                            <div class="stat-value">1,247</div>
+                            <div class="stat-label">Transactions/hour</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">20.3s</div>
+                            <div class="stat-label">Block Time</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sidebar">
+                    <h4>Quick Stats</h4>
+                    <div style="margin-top: var(--spacing-md);">
+                        <div style="margin-bottom: var(--spacing-md);">
+                            <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Current Epoch</div>
+                            <div style="font-weight: 600;">478</div>
+                        </div>
+                        <div style="margin-bottom: var(--spacing-md);">
+                            <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Slot</div>
+                            <div style="font-weight: 600;">10,368,247</div>
+                        </div>
+                        <div style="margin-bottom: var(--spacing-md);">
+                            <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: var(--spacing-xs);">Network Saturation</div>
+                            <div style="font-weight: 600; color: var(--success-green);">72.4%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Examples -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>CSS Variables</h2>
+                <p>Complete CSS custom property system for consistent theming</p>
+            </div>
+            <div class="code-block">
+:root {
+    /* Colors */
+    --primary-bg: #f8fafc;
+    --secondary-bg: #ffffff;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --accent-blue: #3b82f6;
+    --cardano-blue: #0033ad;
+    --ada-accent: #00d4ff;
+    
+    /* Typography */
+    --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+            </div>
+        </div>
+
+        <!-- Component Examples -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>Component Usage</h2>
+                <p>HTML examples for common UI patterns</p>
+            </div>
+            
+            <h3 style="margin-bottom: var(--spacing-md); color: var(--text-secondary);">Statistics Card</h3>
+            <div class="code-block">
+&lt;div class="stat-card"&gt;
+    &lt;div class="stat-value"&gt;&lt;span class="ada-symbol"&gt;₳&lt;/span&gt;0.47&lt;/div&gt;
+    &lt;div class="stat-label"&gt;Ada Price&lt;/div&gt;
+&lt;/div&gt;
+            </div>
+
+            <h3 style="margin-bottom: var(--spacing-md); color: var(--text-secondary);">Data Table Row</h3>
+            <div class="code-block">
+&lt;tr&gt;
+    &lt;td&gt;
+        &lt;code style="font-size: 0.8rem; color: var(--accent-blue);"&gt;8f2e4c...9a1b&lt;/code&gt;
+    &lt;/td&gt;
+    &lt;td&gt;2 / 3&lt;/td&gt;
+    &lt;td&gt;&lt;span class="ada-symbol"&gt;₳&lt;/span&gt; 1,247.50&lt;/td&gt;
+    &lt;td&gt;&lt;span class="badge badge-success"&gt;Confirmed&lt;/span&gt;&lt;/td&gt;
+&lt;/tr&gt;
+            </div>
+
+            <h3 style="margin-bottom: var(--spacing-md); color: var(--text-secondary);">Navigation</h3>
+            <div class="code-block">
+&lt;nav class="nav-list"&gt;
+    &lt;a href="#" class="nav-item active"&gt;Home&lt;/a&gt;
+    &lt;a href="#" class="nav-item"&gt;Analytics&lt;/a&gt;
+    &lt;a href="#" class="nav-item"&gt;Blocks&lt;/a&gt;
+    &lt;a href="#" class="nav-item"&gt;Transactions&lt;/a&gt;
+&lt;/nav&gt;
+            </div>
+        </div>
+
+        <!-- Badges and States -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>Badges & Status Indicators</h2>
+                <p>Status badges for transaction states and system health</p>
+            </div>
+            <div style="display: flex; gap: var(--spacing-md); flex-wrap: wrap; margin-bottom: var(--spacing-lg);">
+                <span class="badge badge-primary">Active</span>
+                <span class="badge badge-success">Confirmed</span>
+                <span class="badge badge-warning">Pending</span>
+                <span class="badge" style="background: rgba(239, 68, 68, 0.1); color: var(--error-red);">Failed</span>
+            </div>
+        </div>
+
+        <!-- Loading States -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>Loading States</h2>
+                <p>Skeleton loading placeholders for better perceived performance</p>
+            </div>
+            <div class="card">
+                <div class="skeleton" style="height: 1.5rem; width: 60%; margin-bottom: var(--spacing-sm); border-radius: var(--radius-sm);"></div>
+                <div class="skeleton" style="height: 1rem; width: 100%; margin-bottom: var(--spacing-xs); border-radius: var(--radius-sm);"></div>
+                <div class="skeleton" style="height: 1rem; width: 80%; border-radius: var(--radius-sm);"></div>
+            </div>
+        </div>
+
+        <!-- Responsive Breakpoints -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>Responsive Design</h2>
+                <p>Mobile-first approach with clean breakpoints</p>
+            </div>
+            <div class="code-block">
+/* Mobile First Approach */
+.container {
+    padding: var(--spacing-md);
+}
+
+/* Tablet and up */
+@media (min-width: 768px) {
+    .container {
+        padding: var(--spacing-lg);
+    }
+    
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Desktop and up */
+@media (min-width: 1024px) {
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+            </div>
+        </div>
+
+        <!-- Accessibility Notes -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>Accessibility Guidelines</h2>
+                <p>Design system follows WCAG 2.1 AA standards</p>
+            </div>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-title">Color Contrast</div>
+                    <div class="card-content">All text meets 4.5:1 contrast ratio requirements. Interactive elements have clear focus states with sufficient color contrast.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Keyboard Navigation</div>
+                    <div class="card-content">All interactive elements are keyboard accessible with visible focus indicators and logical tab order.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Screen Readers</div>
+                    <div class="card-content">Semantic HTML structure with proper ARIA labels and descriptive text for complex data visualizations.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Brand Usage -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <h2>Brand Guidelines</h2>
+                <p>Consistent application of Cardano and cryptocurrency branding</p>
+            </div>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-title">ADA Symbol Usage</div>
+                    <div class="card-content">Always use the <span class="ada-symbol">₳</span> symbol before ADA amounts. Apply the cardano-blue color (#0033ad) for brand consistency.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Transaction Hashes</div>
+                    <div class="card-content">Display transaction hashes in monospace font with truncation (first 6 and last 4 characters) and accent-blue color for links.</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Data Formatting</div>
+                    <div class="card-content">Use consistent number formatting with appropriate decimal places. Large numbers should include thousands separators.</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Add fade-in animation on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Set initial state and observe elements
+        document.querySelectorAll('.fade-in').forEach(element => {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(20px)';
+            element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(element);
+        });
+
+        // Demo interactive functionality
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Add click feedback
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+        });
+
+        // Table row hover enhancement
+        document.querySelectorAll('.table tr').forEach(row => {
+            row.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = 'rgba(59, 130, 246, 0.03)';
+            });
+            
+            row.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = '';
+            });
+        });
+    </script>
+</body>
+</html>
