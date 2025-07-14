@@ -3,6 +3,7 @@ package com.cardano.monitor.resource;
 import com.cardano.monitor.dto.HealthResponse;
 import com.cardano.monitor.model.*;
 import com.cardano.monitor.service.BlockProducerMonitorService;
+import com.cardano.monitor.service.DnsService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.InjectMock;
 import io.restassured.RestAssured;
@@ -23,10 +24,16 @@ class MonitorResourceTest {
     @InjectMock
     BlockProducerMonitorService monitorService;
 
+    @InjectMock
+    DnsService dnsService;
+
     @BeforeEach
     void setUp() {
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
-        reset(monitorService);
+        reset(monitorService, dnsService);
+        
+        // Mock DNS service to return PRIMARY by default
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY);
     }
 
     @Test

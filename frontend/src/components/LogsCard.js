@@ -35,14 +35,14 @@ export default function LogsCard({ status }) {
             <div className="flex justify-between items-center">
               <span>Primary Status:</span>
               <span className={`badge ${status.primary_status === 'up' ? 'badge-success' : 'badge-danger'}`}>
-                {status.primary_status === 'up' ? 'UP' : 'DOWN'}
+                {status.primary_status === 'UP' ? 'UP' : 'DOWN'}
               </span>
             </div>
             
             <div className="flex justify-between items-center">
               <span>Secondary Status:</span>
               <span className={`badge ${status.secondary_status === 'up' ? 'badge-success' : 'badge-danger'}`}>
-                {status.secondary_status === 'up' ? 'UP' : 'DOWN'}
+                {status.secondary_status === 'UP' ? 'UP' : 'DOWN'}
               </span>
             </div>
           </div>

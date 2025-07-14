@@ -95,7 +95,7 @@ export default function App() {
     name: status.config?.primary?.name || 'Primary',
     host: status.config?.primary?.host || 'Unknown',
     port: status.config?.primary?.port || 'Unknown',
-    status: status.primary_status
+    status: status.primary_status?.toLowerCase() || 'unknown'
   };
 
   const secondaryServer = {
@@ -103,7 +103,7 @@ export default function App() {
     name: status.config?.secondary?.name || 'Secondary',
     host: status.config?.secondary?.host || 'Unknown',
     port: status.config?.secondary?.port || 'Unknown',
-    status: status.secondary_status
+    status: status.secondary_status?.toLowerCase() || 'unknown'
   };
 
   return (
