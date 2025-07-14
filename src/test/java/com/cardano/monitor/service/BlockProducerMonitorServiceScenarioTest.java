@@ -44,6 +44,9 @@ class BlockProducerMonitorServiceScenarioTest {
         // Reset service state before each test
         monitorService.stop(); // Ensure stopped state
         monitorService.resetState(); // Reset all internal state
+        
+        // Mock DNS service to return PRIMARY by default
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY);
     }
 
     @Test

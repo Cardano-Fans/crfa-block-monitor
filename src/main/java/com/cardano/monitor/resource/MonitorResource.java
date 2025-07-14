@@ -6,6 +6,7 @@ import com.cardano.monitor.dto.HealthResponse;
 import com.cardano.monitor.dto.StatusResponse;
 import com.cardano.monitor.model.*;
 import com.cardano.monitor.service.BlockProducerMonitorService;
+import com.cardano.monitor.service.DnsService;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
@@ -21,6 +22,9 @@ public class MonitorResource {
     
     @Inject
     BlockProducerMonitorService monitorService;
+    
+    @Inject
+    DnsService dnsService;
     
     @GET
     @Path("/health")
@@ -66,5 +70,22 @@ public class MonitorResource {
 
         return ApiResponse.error("Invalid request. Use 'ACTIVE' field with 'PRIMARY' or 'SECONDARY'");
    }
+   
+   @GET
+   @Path("/dns/current")
+   public Response getCurrentDnsRecord() {
+       String currentIp = dnsService.getCurrentDnsRecordIp();
+       ServerType activeServer = dnsService.detectCurrentActiveServer();
+       
+       if (currentIp != null) {
+           return Response.ok(new DnsRecordResponse(currentIp, activeServer)).build();
+       } else {
+           return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                   .entity(ApiResponse.error("Failed to read DNS record"))
+                   .build();
+       }
+   }
+   
+   public record DnsRecordResponse(String currentIp, ServerType activeServer) {}
 
 }

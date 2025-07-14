@@ -27,11 +27,12 @@ public class BlockProducerMonitorService {
     DnsService dnsService;
 
     private final AtomicBoolean running = new AtomicBoolean(true);
-    private final AtomicReference<ServerType> currentActive = new AtomicReference<>(ServerType.PRIMARY);
+    private final AtomicReference<ServerType> currentActive = new AtomicReference<>();
     private final AtomicReference<Instant> primaryDownSince = new AtomicReference<>();
     private final AtomicReference<Instant> primaryUpSince = new AtomicReference<>();
     private final AtomicReference<Instant> lastCheck = new AtomicReference<>(Instant.now());
     private final AtomicReference<NextAction.WithContext> lastNextAction = new AtomicReference<>(NextAction.NONE.withoutContext());
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     
     @Scheduled(every = "60s")
     public void scheduledHealthCheck() {
@@ -41,6 +42,11 @@ public class BlockProducerMonitorService {
     }
 
     public ServerStatus checkServers() {
+        // Initialize current active server from DNS on first run
+        if (!initialized.get()) {
+            initializeCurrentActiveFromDns();
+        }
+        
         log.info("Checking servers..., currentActive: {}", currentActive.get());
 
         Instant currentTime = Instant.now();
@@ -203,6 +209,19 @@ public class BlockProducerMonitorService {
 
         return nextAction;
     }
+    
+    private void initializeCurrentActiveFromDns() {
+        try {
+            ServerType detectedActive = dnsService.detectCurrentActiveServer();
+            currentActive.set(detectedActive);
+            initialized.set(true);
+            log.info("Initialized current active server from DNS: {}", detectedActive);
+        } catch (Exception e) {
+            log.warn("Failed to detect current active server from DNS, defaulting to PRIMARY: {}", e.getMessage());
+            currentActive.set(ServerType.PRIMARY);
+            initialized.set(true);
+        }
+    }
 
     public ApiResponse start() {
         if (running.get()) {
@@ -275,6 +294,7 @@ public class BlockProducerMonitorService {
         primaryUpSince.set(null);
         lastNextAction.set(NextAction.NONE.withoutContext());
         lastCheck.set(Instant.now());
+        initialized.set(false);
     }
     
     public ServerStatus getStatus() {

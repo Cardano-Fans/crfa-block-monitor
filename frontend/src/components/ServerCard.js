@@ -15,7 +15,6 @@ export default function ServerCard({ server, isActive, onSwitch }) {
       
       <div className="card-body">
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h6>Status</h6>
           {server.status === 'up' && (
             <div className="status-online" style={{ color: '#2e7d32', fontWeight: 'bold' }}>● UP</div>
           )}
@@ -28,15 +27,6 @@ export default function ServerCard({ server, isActive, onSwitch }) {
         </div>
         
         <div style={{ marginTop: 'auto' }}>
-          {/* Status label for when server is down */}
-          {server.status !== 'up' && (
-            <div style={{ textAlign: 'center', marginBottom: '10px', padding: '8px', backgroundColor: '#fee', border: '1px solid #fcc', borderRadius: '4px' }}>
-              <span style={{ color: '#d32f2f', fontWeight: 'bold' }}>
-                {server.type.charAt(0).toUpperCase() + server.type.slice(1)} Server Down
-              </span>
-            </div>
-          )}
-          
           {/* Conditional switch button for when server is up */}
           {server.status === 'up' && !isActive && (
             <button
@@ -47,16 +37,7 @@ export default function ServerCard({ server, isActive, onSwitch }) {
               Switch to {server.type.charAt(0).toUpperCase() + server.type.slice(1)}
             </button>
           )}
-          
-          {/* Currently Active label */}
-          {isActive && (
-            <div style={{ textAlign: 'center', marginBottom: '10px', padding: '8px', backgroundColor: '#e8f5e8', border: '1px solid #4caf50', borderRadius: '4px' }}>
-              <span style={{ color: '#2e7d32', fontWeight: 'bold' }}>
-                Currently Active
-              </span>
-            </div>
-          )}
-          
+
           {/* Always visible colorful switch button */}
           <button
             onClick={() => onSwitch(server.type)}
