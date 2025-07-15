@@ -38,9 +38,52 @@ dependencies {
     testImplementation 'org.awaitility:awaitility'
 }
 
+// Standard Gradle test configuration
 test {
     systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
+    useJUnitPlatform()
+    
+    // Only run unit tests (exclude integration tests)
+    exclude '**/service/*IntegrationTest.class'
+    exclude '**/service/*ScenarioTest.class'
 }
+
+// Integration test configuration
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+sourceSets {
+    integrationTest {
+        java {
+            srcDir 'src/test/java'
+        }
+        resources {
+            srcDir 'src/test/resources'
+        }
+        compileClasspath += main.output + test.output
+        runtimeClasspath += main.output + test.output
+    }
+}
+
+task integrationTest(type: Test) {
+    description = 'Runs integration tests'
+    group = 'verification'
+    
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    
+    systemProperty "java.util.logging.manager", "org.jboss.logmanager.LogManager"
+    useJUnitPlatform()
+    
+    // Only run integration tests
+    include '**/service/*IntegrationTest.class'
+    include '**/service/*ScenarioTest.class'
+}
+
+// Make check task run both unit and integration tests
+check.dependsOn integrationTest
 
 compileJava {
     options.encoding = 'UTF-8'
