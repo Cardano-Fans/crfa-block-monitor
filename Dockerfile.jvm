@@ -1,4 +1,9 @@
-FROM quay.io/quarkus/ubi-quarkus-openjdk-21-builder-image:jdk-21 AS build
+FROM eclipse-temurin:24-jdk AS build
+
+# Install Node.js for frontend build
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
 
 # Copy the gradle wrapper and build files
 COPY gradle /code/gradle
@@ -6,12 +11,9 @@ COPY gradlew /code/gradlew
 COPY build.gradle /code/build.gradle
 COPY settings.gradle /code/settings.gradle
 
-# Copy source code
+# Copy frontend and source code
+COPY frontend /code/frontend
 COPY src /code/src
-
-USER root
-RUN chown -R quarkus /code
-USER quarkus
 
 WORKDIR /code
 
@@ -19,7 +21,7 @@ WORKDIR /code
 RUN ./gradlew build -x test
 
 # Runtime stage
-FROM quay.io/quarkus/quarkus-openjdk-21-runtime:latest
+FROM eclipse-temurin:24-jre
 WORKDIR /work/
 
 # Copy the built application
@@ -28,7 +30,11 @@ COPY --from=build /code/build/quarkus-app/*.jar /work/
 COPY --from=build /code/build/quarkus-app/app/ /work/app/
 COPY --from=build /code/build/quarkus-app/quarkus/ /work/quarkus/
 
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN chown -R appuser:appuser /work
+
 EXPOSE 8080
-USER 1001
+USER appuser
 
 ENTRYPOINT ["java", "-jar", "/work/quarkus-run.jar"]

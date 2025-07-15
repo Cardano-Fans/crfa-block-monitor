@@ -5,6 +5,7 @@
 !gradlew
 !gradlew.bat
 !src/
+!frontend/
 .git
 .gitignore
 README.md

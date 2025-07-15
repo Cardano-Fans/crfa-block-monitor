@@ -13,7 +13,7 @@ A Quarkus-based Java microservice that monitors Cardano block producer nodes and
 
 ## Requirements
 
-- Java 21 LTS
+- Java 24 LTS
 - Gradle 8.5+
 - Docker (for native image build)
 
@@ -64,4 +64,4 @@ The service runs a scheduled task every 60 seconds to check both primary and sec
 
 ## Building Native Image
 
-The native image is built using GraalVM 21 and produces a lightweight, fast-starting executable suitable for containers and resource-constrained environments.
+The native image is built using GraalVM 24 LTS and produces a lightweight, fast-starting executable suitable for containers and resource-constrained environments.

@@ -1,4 +1,10 @@
-FROM quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:jdk-21 AS build
+FROM quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:jdk-24 AS build
+
+# Install Node.js for frontend build
+USER root
+RUN microdnf install -y curl && \
+    curl -fsSL https://rpm.nodesource.com/setup_20.x | bash - && \
+    microdnf install -y nodejs
 
 # Copy the gradle wrapper and build files
 COPY gradle /code/gradle
@@ -6,10 +12,10 @@ COPY gradlew /code/gradlew
 COPY build.gradle /code/build.gradle
 COPY settings.gradle /code/settings.gradle
 
-# Copy source code
+# Copy frontend and source code
+COPY frontend /code/frontend
 COPY src /code/src
 
-USER root
 RUN chown -R quarkus /code
 USER quarkus
 
