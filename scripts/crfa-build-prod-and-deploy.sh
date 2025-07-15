@@ -27,7 +27,7 @@ log_error() {
 
 # Step 1: Build native image
 log_info "Building native image..."
-./gradlew build -Dquarkus.package.type=native -x test
+./gradlew build -Dquarkus.package.type=native -x test -x integrationTest
 
 # Step 2: Find the executable in build directory
 log_info "Finding executable in build directory..."

@@ -3,7 +3,7 @@ FROM quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:jdk-24 AS build
 # Install Node.js for frontend build
 USER root
 RUN microdnf install -y curl && \
-    curl -fsSL https://rpm.nodesource.com/setup_20.x | bash - && \
+    curl -fsSL https://rpm.nodesource.com/setup_22.x | bash - && \
     microdnf install -y nodejs
 
 # Copy the gradle wrapper and build files

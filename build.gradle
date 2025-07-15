@@ -101,8 +101,8 @@ quarkus {
 }
 
 node {
-    version = '20.15.0'
-    npmVersion = '10.7.0'
+    version = '22.17.0'
+    npmVersion = '11.4.2'
     workDir = file("${project.projectDir}/frontend")
     npmWorkDir = file("${project.projectDir}/frontend")
     nodeProjectDir = file("${project.projectDir}/frontend")
