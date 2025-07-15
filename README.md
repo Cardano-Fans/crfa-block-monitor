@@ -1,5 +1,10 @@
 # Block Monitor Backend
 
+![Preview](preview.webp)
+
+[![Build and Unit Tests](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/build-and-test.yml/badge.svg?branch=main)](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/build-and-test.yml)
+[![Integration Tests](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/integration-tests.yml/badge.svg?branch=main)](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/integration-tests.yml)
+
 A Quarkus-based Java microservice that monitors Cardano block producer nodes and provides automatic failover capabilities.
 
 ## Features
