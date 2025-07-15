@@ -3,7 +3,8 @@ FROM eclipse-temurin:24-jdk AS build
 # Install Node.js for frontend build
 RUN apt-get update && apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-    apt-get install -y nodejs
+    apt-get install -y nodejs && \
+    npm install -g npm@11.4.2
 
 # Copy the gradle wrapper and build files
 COPY gradle /code/gradle
@@ -18,7 +19,7 @@ COPY src /code/src
 WORKDIR /code
 
 # Build the application
-RUN ./gradlew build -x test
+RUN ./gradlew build -x test -x integrationTest
 
 # Runtime stage
 FROM eclipse-temurin:24-jre

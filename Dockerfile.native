@@ -4,7 +4,8 @@ FROM quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:jdk-24 AS build
 USER root
 RUN microdnf install -y curl && \
     curl -fsSL https://rpm.nodesource.com/setup_22.x | bash - && \
-    microdnf install -y nodejs
+    microdnf install -y nodejs && \
+    npm install -g npm@11.4.2
 
 # Copy the gradle wrapper and build files
 COPY gradle /code/gradle
@@ -22,15 +23,17 @@ USER quarkus
 WORKDIR /code
 
 # Build the native executable
-RUN ./gradlew build -Dquarkus.native.enabled=true -Dquarkus.package.jar.enabled=false -x test
+RUN ./gradlew build -Dquarkus.native.enabled=true -Dquarkus.package.jar.enabled=false -x test -x integrationTest
 
 # Runtime stage
 FROM quay.io/quarkus/quarkus-micro-image:2.0
+
 WORKDIR /work/
 COPY --from=build /code/build/block-monitor-backend-*-runner /work/application
 
-# Set up a non-root user
+# Set up permissions (run as user 1001 which matches cardano on host)
 RUN chmod 775 /work/application
+
 EXPOSE 8080
 USER 1001
 

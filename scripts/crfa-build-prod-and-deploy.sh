@@ -3,9 +3,10 @@
 set -e
 
 # Configuration
-SERVER_HOST="ubuntu@10.0.0.1"
-INSTALL_DIR="/opt/block-monitor-backend"
-SERVICE_NAME="block-monitor-backend"
+HOST="10.0.0.1"
+CONTAINER_NAME="block-monitor-backend"
+DEPLOY_DIR="/opt/block-monitor-backend"
+SERVER_HOST="ubuntu@$HOST"
 
 # Colors for output
 RED='\033[0;31m'
@@ -25,70 +26,74 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Step 1: Build native image
-log_info "Building native image..."
-./gradlew build -Dquarkus.package.type=native -x test -x integrationTest
+# Step 1: Clean up local files
+log_info "Cleaning up local files..."
+rm -f block-monitor-backend-latest.tar
+rm -f block-monitor-backend-latest.tar.gz
 
-# Step 2: Find the executable in build directory
-log_info "Finding executable in build directory..."
-EXECUTABLE=$(find build -name "*-runner" -type f | head -1)
+# Step 2: Build native container image
+log_info "Building native container image..."
+docker build -t block-monitor-backend:latest -f Dockerfile.native .
 
-if [ -z "$EXECUTABLE" ]; then
-    log_error "No executable found in build directory"
-    exit 1
-fi
+# Step 3: Save and compress image
+log_info "Saving and compressing image..."
+docker save -o block-monitor-backend-latest.tar block-monitor-backend:latest
+gzip block-monitor-backend-latest.tar
 
-log_info "Found executable: $EXECUTABLE"
+# Step 4: Clean up remote files
+log_info "Cleaning up remote files..."
+ssh "$SERVER_HOST" "rm -f block-monitor-backend-latest.tar ; rm -f block-monitor-backend-latest.tar.gz"
 
-# Step 3: Upload to server
-log_info "Uploading executable to server..."
-scp "$EXECUTABLE" "$SERVER_HOST:~/"
+# Step 5: Upload to server
+log_info "Uploading container image to server..."
+scp block-monitor-backend-latest.tar.gz "$SERVER_HOST:~"
 
-# Get the basename for the uploaded file
-UPLOADED_FILE=$(basename "$EXECUTABLE")
-
-# Step 4: Install on server
-log_info "Installing on server..."
+# Step 6: Deploy on remote machine
+log_info "Deploying on remote machine..."
 ssh "$SERVER_HOST" << EOF
     set -e
     
-    # Check what executable currently exists
-    CURRENT_EXECUTABLE=\$(sudo -u cardano find "$INSTALL_DIR" -name "*-runner" -o -name "block-monitor-backend" -type f | head -1)
+    # Extract and load new image
+    echo "Extracting and loading container image..."
+    gunzip -c block-monitor-backend-latest.tar.gz | sudo -u cardano podman load && 
     
-    if [ -z "\$CURRENT_EXECUTABLE" ]; then
-        echo "No existing executable found in $INSTALL_DIR"
-        exit 1
-    fi
+    # Stop and remove old container
+    echo "Stopping and removing old container..."
+    if sudo -u cardano podman ps -a --format "{{.Names}}" | grep -q "^$CONTAINER_NAME\$"; then
+        sudo -u cardano podman stop $CONTAINER_NAME || true
+        sudo -u cardano podman rm $CONTAINER_NAME || true
+    fi &&
     
-    CURRENT_NAME=\$(basename "\$CURRENT_EXECUTABLE")
-    echo "Current executable: \$CURRENT_NAME"
+    # Ensure deploy directory exists and is owned by cardano
+    echo "Setting up deploy directory..."
+    sudo mkdir -p $DEPLOY_DIR &&
+    sudo chown cardano:cardano $DEPLOY_DIR &&
     
-    # Create backup
-    echo "Creating backup of existing executable..."
-    sudo -u cardano cp "\$CURRENT_EXECUTABLE" "\$CURRENT_EXECUTABLE.backup.\$(date +%Y%m%d_%H%M%S)"
+    # Start new container with restart policy
+    echo "Starting new container..."
+    sudo -u cardano podman run -d \\
+        --name $CONTAINER_NAME \\
+        --restart unless-stopped \\
+        -p 8080:8080 \\
+        --network host \\
+        -v $DEPLOY_DIR/application-prod.yml:/work/application-prod.yml:ro \\
+        --entrypoint='["./application", "-Dquarkus.http.host=0.0.0.0", "-Dquarkus.config.locations=/work/application-prod.yml"]' \\
+        block-monitor-backend:latest &&
     
-    # Stop service
-    echo "Stopping $SERVICE_NAME service..."
-    sudo systemctl stop "$SERVICE_NAME"
+    # Clean up remote tar file
+    echo "Cleaning up remote files..."
+    rm -f block-monitor-backend-latest.tar
     
-    # Install new executable
-    echo "Installing new executable..."
-    sudo cp "\$HOME/$UPLOADED_FILE" "$INSTALL_DIR/\$CURRENT_NAME"
-    sudo chown cardano:cardano "$INSTALL_DIR/\$CURRENT_NAME"
-    sudo chmod +x "$INSTALL_DIR/\$CURRENT_NAME"
-    
-    # Start service
-    echo "Starting $SERVICE_NAME service..."
-    sudo systemctl start "$SERVICE_NAME"
-    
-    # Check service status
-    echo "Checking service status..."
-    sudo systemctl status "$SERVICE_NAME" --no-pager
-    
-    # Cleanup uploaded file
-    rm "\$HOME/$UPLOADED_FILE"
-    
-    echo "Deployment completed successfully!"
+    echo "Container deployment completed successfully!"
 EOF
+
+# Step 7: Clean up local files after successful deployment
+if [ $? -eq 0 ]; then
+    log_info "Deployment successful! Cleaning up local files..."
+    rm -f block-monitor-backend-latest.tar.gz
+else
+    log_error "Deployment failed! Local tar.gz file preserved for debugging"
+    exit 1
+fi
 
 log_info "Deployment script completed!"

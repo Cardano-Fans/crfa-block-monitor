@@ -53,10 +53,11 @@ docker run -p 8080:8080 cardano/block-monitor-backend
 
 ## API Endpoints
 
-- `GET /api/health` - Health check
-- `GET /api/status` - Get current monitoring status
-- `POST /api/control` - Start/stop monitoring
-- `POST /api/active` - Manual server switching
+- `GET /api/health` - Health check with HTTP status codes (200=healthy, 500=unhealthy)
+- `GET /api/status` - Get current monitoring status with complete server information
+- `POST /api/control` - Start/stop monitoring (accepts `{"action": "START|STOP"}`)
+- `POST /api/active` - Manual server switching (accepts `{"active": "PRIMARY|SECONDARY"}`)
+- `GET /api/dns/current` - Get current DNS record IP and active server type
 
 ## Monitoring
 

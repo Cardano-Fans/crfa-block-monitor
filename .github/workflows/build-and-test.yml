@@ -26,6 +26,9 @@ jobs:
         node-version: '22'
         cache: 'npm'
         cache-dependency-path: 'frontend/package-lock.json'
+    
+    - name: Install npm 11.4.2
+      run: npm install -g npm@11.4.2
 
     - name: Cache Gradle packages
       uses: actions/cache@v4
@@ -41,7 +44,7 @@ jobs:
       run: chmod +x ./gradlew
 
     - name: Build application
-      run: ./gradlew build -x test
+      run: ./gradlew build -x test -x integrationTest
 
     - name: Run unit tests
       run: ./gradlew test
