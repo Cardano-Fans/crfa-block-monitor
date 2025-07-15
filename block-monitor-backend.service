@@ -9,7 +9,7 @@ Type=exec
 User=block-monitor
 Group=block-monitor
 WorkingDirectory=/opt/block-monitor-backend
-ExecStart=/opt/block-monitor-backend/block-monitor-backend -Dquarkus.config.locations=application-crfa.yml
+ExecStart=/opt/block-monitor-backend/block-monitor-backend -Dquarkus.config.locations=application-prod.yml
 Restart=always
 RestartSec=10
 StandardOutput=journal
