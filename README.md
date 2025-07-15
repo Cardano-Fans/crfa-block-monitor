@@ -19,15 +19,21 @@ A Quarkus-based Java microservice that monitors Cardano block producer nodes and
 ## Requirements
 
 - Java 24 LTS
-- Gradle 8.5+
-- Docker (for native image build)
+- Gradle 8.14.3+ (uses Gradle wrapper)
+- Node.js 22.x LTS and npm 11.4.2+ (for frontend build)
+- Docker (for containerized builds)
 
 ## Configuration
 
-Edit `src/main/resources/application.yml` to configure:
+The application uses different configuration files for different environments:
 
+- **Development**: `src/main/resources/application-dev.yml`
+- **Local**: `src/main/resources/application-local.yml`
+- **Production**: External config file (e.g., `application-prod.yml`)
+
+Edit the appropriate configuration file to set:
 - Server hostnames and ports
-- DNS API credentials
+- DNS API credentials (Name.com)
 - Timing settings for failover/failback
 - Logging configuration
 
@@ -46,14 +52,24 @@ java -jar build/quarkus-app/quarkus-run.jar
 
 ### Native Image
 ```bash
-./gradlew build -Dquarkus.package.type=native
-./build/block-monitor-backend-1.0.0-runner
+./gradlew build -Dquarkus.native.enabled=true -Dquarkus.package.jar.enabled=false
+./build/block-monitor-backend-*-runner
 ```
 
-### Docker Native Image
+### Docker Builds
+
+Two Docker builds are available:
+
+#### JVM Docker Image
 ```bash
-docker build -f Dockerfile -t cardano/block-monitor-backend .
-docker run -p 8080:8080 cardano/block-monitor-backend
+docker build -f Dockerfile.jvm -t block-monitor-backend:jvm .
+docker run -p 8080:8080 block-monitor-backend:jvm
+```
+
+#### Native Docker Image
+```bash
+docker build -f Dockerfile.native -t block-monitor-backend:native .
+docker run -p 8080:8080 block-monitor-backend:native
 ```
 
 ## API Endpoints
