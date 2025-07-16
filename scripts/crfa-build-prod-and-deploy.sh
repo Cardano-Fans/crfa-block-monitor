@@ -76,6 +76,8 @@ ssh "$SERVER_HOST" << EOF
         --restart unless-stopped \\
         -p 8080:8080 \\
         --network host \\
+        --log-driver=journald \\
+        --log-opt tag=$CONTAINER_NAME \\
         -v $DEPLOY_DIR/application-prod.yml:/work/application-prod.yml:ro \\
         --entrypoint='["./application", "-Dquarkus.http.host=0.0.0.0", "-Dquarkus.config.locations=/work/application-prod.yml"]' \\
         block-monitor-backend:latest &&

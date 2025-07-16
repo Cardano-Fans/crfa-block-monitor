@@ -2,8 +2,8 @@ package com.cardano.monitor.resource;
 
 import com.cardano.monitor.dto.HealthResponse;
 import com.cardano.monitor.model.*;
-import com.cardano.monitor.service.BlockProducerMonitorService;
-import com.cardano.monitor.service.DnsService;
+import com.cardano.monitor.service.BlockProducerMonitorServiceIF;
+import com.cardano.monitor.service.DnsServiceIF;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.InjectMock;
 import io.restassured.RestAssured;
@@ -22,10 +22,10 @@ import static org.mockito.Mockito.*;
 class MonitorResourceTest {
 
     @InjectMock
-    BlockProducerMonitorService monitorService;
+    BlockProducerMonitorServiceIF monitorService;
 
     @InjectMock
-    DnsService dnsService;
+    DnsServiceIF dnsService;
 
     @BeforeEach
     void setUp() {

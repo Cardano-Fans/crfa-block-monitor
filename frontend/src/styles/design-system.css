@@ -169,6 +169,11 @@ body {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), var(--shadow-sm);
 }
 
+.card-critical {
+  border: 2px solid #dc2626;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1);
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;
@@ -350,6 +355,42 @@ body {
   background: rgba(239, 68, 68, 0.1);
   color: var(--error-red);
   border-left-color: var(--error-red);
+}
+
+.alert-critical {
+  background: rgba(239, 68, 68, 0.15);
+  color: #991b1b;
+  border-left-color: #dc2626;
+  border: 2px solid #dc2626;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1);
+  animation: pulse-critical 2s ease-in-out infinite alternate;
+  display: flex;
+  align-items: flex-start;
+}
+
+.alert-critical .alert-icon {
+  font-size: 1.5rem;
+  margin-right: 0.75rem;
+}
+
+.alert-critical .alert-content h3 {
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+  color: #991b1b;
+}
+
+.alert-critical .alert-content p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+@keyframes pulse-critical {
+  0% {
+    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1);
+  }
+  100% {
+    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
+  }
 }
 
 /* Loading Animation */

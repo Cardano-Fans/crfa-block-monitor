@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'io.quarkus' version '3.16.4'
     id 'com.github.node-gradle.node' version '7.1.0'
+    id 'jacoco'
 }
 
 repositories {
@@ -26,6 +27,7 @@ dependencies {
     implementation 'io.quarkus:quarkus-smallrye-health'
     implementation 'io.quarkus:quarkus-container-image-docker'
     implementation 'io.quarkus:quarkus-micrometer'
+    implementation 'io.quarkus:quarkus-smallrye-openapi'
     // implementation 'io.quarkus:quarkus-logging-json' // Removed for human-readable logs
     implementation 'io.quarkus:quarkus-hibernate-validator'
     
@@ -46,6 +48,11 @@ test {
     // Only run unit tests (exclude integration tests)
     exclude '**/service/*IntegrationTest.class'
     exclude '**/service/*ScenarioTest.class'
+    
+    // JaCoCo configuration 
+    jacoco {
+        enabled = true
+    }
 }
 
 // Integration test configuration
@@ -80,10 +87,102 @@ task integrationTest(type: Test) {
     // Only run integration tests
     include '**/service/*IntegrationTest.class'
     include '**/service/*ScenarioTest.class'
+    
+    // Enable JaCoCo for integration tests
+    jacoco {
+        enabled = true
+        destinationFile = file("$buildDir/jacoco/integrationTest.exec")
+    }
 }
 
 // Make check task run both unit and integration tests
 check.dependsOn integrationTest
+
+// JaCoCo configuration
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+// Configure JaCoCo test report
+jacocoTestReport {
+    dependsOn test
+    
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(true)
+    }
+    
+    executionData.setFrom(fileTree(dir: 'build/jacoco', include: '**/*.exec'))
+    
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                '**/config/**',
+                '**/dto/**',
+                '**/model/**',
+                '**/Application.class'
+            ])
+        }))
+    }
+}
+
+// Configure JaCoCo verification
+jacocoTestCoverageVerification {
+    dependsOn jacocoTestReport
+    
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.70 // 70% minimum coverage
+            }
+        }
+    }
+    
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                '**/config/**',
+                '**/dto/**',
+                '**/model/**',
+                '**/Application.class'
+            ])
+        }))
+    }
+}
+
+// Make test report run automatically with test
+test.finalizedBy jacocoTestReport
+
+// Task to generate coverage for both unit and integration tests
+task jacocoMergedReport(type: JacocoReport) {
+    dependsOn test, integrationTest
+    
+    executionData.setFrom(files(
+        "$buildDir/jacoco/test.exec",
+        "$buildDir/jacoco/integrationTest.exec"
+    ).filter { it.exists() })
+    
+    sourceDirectories.setFrom(files(sourceSets.main.allSource.srcDirs))
+    classDirectories.setFrom(files(sourceSets.main.output))
+    
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(true)
+    }
+    
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                '**/config/**',
+                '**/dto/**',
+                '**/model/**',
+                '**/Application.class'
+            ])
+        }))
+    }
+}
 
 compileJava {
     options.encoding = 'UTF-8'

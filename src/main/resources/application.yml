@@ -19,6 +19,18 @@ quarkus:
   rest-client:
     name-com-api:
       url: https://api.name.com
+  
+  smallrye-openapi:
+    info-title: Block Monitor Backend API
+    info-version: 1.0.0
+    info-description: RESTful API for monitoring Cardano block producer nodes with automatic failover capabilities
+    info-contact-name: Cardano Fans
+    info-contact-url: https://github.com/Cardano-Fans/crfa-block-monitor
+    servers: 
+      - url: http://localhost:8080
+        description: Development server
+      - url: https://your-production-url.com
+        description: Production server
     
 monitor:
   primary:

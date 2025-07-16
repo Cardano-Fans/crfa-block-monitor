@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 class BlockProducerMonitorServiceBasicIntegrationTest {
 
     @Inject
-    BlockProducerMonitorService monitorService;
+    BlockProducerMonitorServiceIF monitorService;
 
     @Inject
     MonitorConfig config;
@@ -31,7 +31,7 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
     NetworkService networkService;
 
     @InjectMock
-    DnsService dnsService;
+    DnsServiceIF dnsService;
 
     @BeforeEach
     void setUp() {
@@ -121,6 +121,9 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
         when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class)))
             .thenReturn(true);
         when(dnsService.switchDnsToServer(ServerType.SECONDARY)).thenReturn(true);
+        // Mock DNS service to return SECONDARY after switch
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY)
+            .thenReturn(ServerType.SECONDARY); // After switch
 
         // When
         ApiResponse response = monitorService.manualSwitch(ServerType.SECONDARY);
@@ -186,6 +189,8 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
         // Given
         when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
         when(dnsService.switchDnsToServer(any())).thenReturn(true);
+        // Mock DNS service to handle multiple calls (default to PRIMARY, then SECONDARY after switch)
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY, ServerType.PRIMARY, ServerType.SECONDARY);
 
         CountDownLatch latch = new CountDownLatch(2);
         

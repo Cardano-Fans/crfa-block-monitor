@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
     class BlockProducerMonitorServiceIntegrationTest {
 
     @Inject
-    BlockProducerMonitorService monitorService;
+    BlockProducerMonitorServiceIF monitorService;
 
     @Inject
     MonitorConfig config;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
     NetworkService networkService;
 
     @InjectMock
-    DnsService dnsService;
+    DnsServiceIF dnsService;
 
     @BeforeEach
     void setUp() {
@@ -61,13 +61,20 @@ import static org.mockito.Mockito.*;
         when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class)))
             .thenReturn(true);
         when(dnsService.switchDnsToServer(any())).thenReturn(true);
+        
+        // Mock DNS service for complete cycle
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY)
+            .thenReturn(ServerType.PRIMARY) // Phase 2: Still on primary during wait
+            .thenReturn(ServerType.SECONDARY) // Phase 3: After switch to secondary
+            .thenReturn(ServerType.SECONDARY) // Phase 4: Still on secondary during failback wait
+            .thenReturn(ServerType.PRIMARY); // Phase 5: Back to primary after failback
 
         // Phase 1: Both servers healthy
         ServerStatus status1 = monitorService.checkServers();
         assertEquals(ServerType.PRIMARY, status1.currentActive());
         assertEquals(NextAction.NONE, status1.nextAction().getAction());
 
-        // Pha  se 2: Primary goes down
+        // Phase 2: Primary goes down
         primaryHealthState.set(0);
         ServerStatus status2 = monitorService.checkServers();
         assertEquals(ServerType.PRIMARY, status2.currentActive());
@@ -141,6 +148,8 @@ import static org.mockito.Mockito.*;
         // Given
         when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
         when(dnsService.switchDnsToServer(any())).thenReturn(true);
+        // Mock DNS service for concurrent operations
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY, ServerType.SECONDARY, ServerType.PRIMARY);
 
         CountDownLatch latch = new CountDownLatch(2);
         
@@ -278,6 +287,12 @@ import static org.mockito.Mockito.*;
         assertEquals(NextAction.FAILED_TO_SWITCH_TO_SECONDARY, status3.nextAction().getAction());
         assertEquals(ServerType.PRIMARY, status3.currentActive());
 
+        // Mock DNS service to return SECONDARY after successful switch
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY)
+            .thenReturn(ServerType.PRIMARY) // First two failed attempts
+            .thenReturn(ServerType.PRIMARY) // Third failed attempt
+            .thenReturn(ServerType.SECONDARY); // Fourth successful attempt
+        
         // When - Fourth check attempts failover again (should succeed)
         ServerStatus status4 = monitorService.checkServers();
         assertEquals(NextAction.SWITCHED_TO_SECONDARY, status4.nextAction().getAction());
@@ -347,6 +362,10 @@ import static org.mockito.Mockito.*;
         // Wait for failover delay (30s from test config)
         Thread.sleep(31000);
 
+        // Mock DNS service to return SECONDARY after switch
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY)
+            .thenReturn(ServerType.SECONDARY); // After switch
+        
         // When - Second check should trigger failover
         ServerStatus status2 = monitorService.checkServers();
         assertEquals(NextAction.SWITCHED_TO_SECONDARY, status2.nextAction().getAction());

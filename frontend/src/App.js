@@ -128,17 +128,30 @@ export default function App() {
       </div>
 
       <div className="container">
+        {/* Critical Alert for Both Servers Down */}
+        {status.current_active === 'NONE' && (
+          <div className="alert alert-critical mb-4">
+            <div className="alert-icon">⚠️</div>
+            <div className="alert-content">
+              <h3>Critical: No Active Server</h3>
+              <p>Both primary and secondary servers are currently down. The system is not actively serving traffic.</p>
+            </div>
+          </div>
+        )}
+        
         {/* 2x2 Grid Layout */}
         <div className="grid grid-cols-2">
           <ServerCard
             server={primaryServer}
             isActive={status.current_active === 'PRIMARY'}
             onSwitch={handleSwitch}
+            systemStatus={status.current_active}
           />
           <ServerCard
             server={secondaryServer}
             isActive={status.current_active === 'SECONDARY'}
             onSwitch={handleSwitch}
+            systemStatus={status.current_active}
           />
           <StatusCard
             status={status}

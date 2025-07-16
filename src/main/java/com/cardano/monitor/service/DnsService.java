@@ -2,6 +2,7 @@ package com.cardano.monitor.service;
 
 import com.cardano.monitor.config.MonitorConfig;
 import com.cardano.monitor.model.ServerType;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -15,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 
 @ApplicationScoped
 @Slf4j
-public class DnsService {
+public class DnsService implements DnsServiceIF {
 
     @Inject
     MonitorConfig config;
@@ -81,7 +82,8 @@ public class DnsService {
         String answer,
         int ttl
     ) {}
-    
+
+    @Nullable
     public String getCurrentDnsRecordIp() {
         try {
             MonitorConfig.DnsConfig dnsConfig = config.dns();
@@ -120,11 +122,11 @@ public class DnsService {
     }
     
     public ServerType detectCurrentActiveServer() {
-        String currentDnsIp = getCurrentDnsRecordIp();
+        @Nullable String currentDnsIp = getCurrentDnsRecordIp();
         
         if (currentDnsIp == null) {
-            log.warn("Could not determine current DNS IP, defaulting to PRIMARY");
-            return ServerType.PRIMARY;
+            log.warn("Could not determine current DNS IP, defaulting to NONE");
+            return ServerType.NONE;
         }
         
         String primaryIp = config.primary().host();
@@ -133,16 +135,19 @@ public class DnsService {
         if (currentDnsIp.equals(primaryIp)) {
             log.info("DNS currently points to PRIMARY server ({})", primaryIp);
             return ServerType.PRIMARY;
-        } else if (currentDnsIp.equals(secondaryIp)) {
+        }
+
+        if (currentDnsIp.equals(secondaryIp)) {
             log.info("DNS currently points to SECONDARY server ({})", secondaryIp);
             return ServerType.SECONDARY;
-        } else {
-            log.warn("DNS points to unknown IP ({}) - not matching PRIMARY ({}) or SECONDARY ({}), defaulting to PRIMARY", 
-                    currentDnsIp, primaryIp, secondaryIp);
-            return ServerType.PRIMARY;
         }
+
+        log.warn("DNS points to unknown IP ({}) - not matching PRIMARY ({}) or SECONDARY ({}), defaulting to NONE",
+                currentDnsIp, primaryIp, secondaryIp);
+
+        return ServerType.NONE;
     }
-    
+
     @RegisterRestClient(configKey = "name-com-api")
     @Path("/v4/domains")
     public interface NameComApiClient {

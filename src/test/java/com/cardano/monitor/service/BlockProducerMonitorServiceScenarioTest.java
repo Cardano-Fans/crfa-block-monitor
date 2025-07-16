@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 class BlockProducerMonitorServiceScenarioTest {
 
     @Inject
-    BlockProducerMonitorService monitorService;
+    BlockProducerMonitorServiceIF monitorService;
 
     @Inject
     MonitorConfig config;
@@ -35,7 +35,7 @@ class BlockProducerMonitorServiceScenarioTest {
     NetworkService networkService;
 
     @InjectMock
-    DnsService dnsService;
+    DnsServiceIF dnsService;
 
     @BeforeEach
     void setUp() {
@@ -61,6 +61,10 @@ class BlockProducerMonitorServiceScenarioTest {
         when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class)))
             .thenReturn(true);
         when(dnsService.switchDnsToServer(ServerType.SECONDARY)).thenReturn(true);
+        // Mock DNS service to return SECONDARY after successful switch
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY)
+            .thenReturn(ServerType.SECONDARY) // After switch
+            .thenReturn(ServerType.SECONDARY); // Stable on secondary
 
         // When: Monitor detects failure and waits for failover
         ServerStatus beforeFailover = monitorService.checkServers();
@@ -91,6 +95,8 @@ class BlockProducerMonitorServiceScenarioTest {
         // Given: Network partition causes both servers to appear down
         when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class)))
             .thenReturn(false);
+        // Mock DNS service to return NONE when both servers are down
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.NONE);
         // Using test config failover delay of 30s
 
         // When: Monitor detects both servers down
@@ -170,6 +176,9 @@ class BlockProducerMonitorServiceScenarioTest {
             verify(dnsService, never()).switchDnsToServer(targetServer);
         } else {
             // Should succeed for SECONDARY
+            // Mock DNS service to return SECONDARY after switch
+            when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY)
+                .thenReturn(ServerType.SECONDARY);
             assertTrue(response.success());
             assertEquals(targetServer, monitorService.getStatus().currentActive());
             verify(dnsService).switchDnsToServer(targetServer);
@@ -217,6 +226,9 @@ class BlockProducerMonitorServiceScenarioTest {
             .thenReturn(true);
         // Using test config failover delay of 30s
 
+        // Mock DNS service to consistently return PRIMARY for flapping scenario
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY);
+        
         // When: Multiple rapid checks
         List<ServerStatus> statuses = Arrays.asList(
             monitorService.checkServers(), // Primary down
@@ -251,6 +263,13 @@ class BlockProducerMonitorServiceScenarioTest {
         // Using test config failover delay of 30s
         // Using test config failback delay of 60s
 
+        // Mock DNS service for the complete lifecycle
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY)
+            .thenReturn(ServerType.PRIMARY) // Phase 2: Still on primary during wait
+            .thenReturn(ServerType.SECONDARY) // Phase 3: After switch to secondary
+            .thenReturn(ServerType.SECONDARY) // Phase 4: Still on secondary during failback wait
+            .thenReturn(ServerType.PRIMARY); // Phase 5: Back to primary after failback
+            
         // Phase 1: All healthy
         ServerStatus phase1 = monitorService.checkServers();
         assertEquals(NextAction.NONE, phase1.nextAction().getAction());

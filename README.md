@@ -4,6 +4,10 @@
 
 [![Build and Unit Tests](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/build-and-test.yml/badge.svg?branch=main)](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/build-and-test.yml)
 [![Integration Tests](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/integration-tests.yml/badge.svg?branch=main)](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/integration-tests.yml)
+[![Code Coverage](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/coverage.yml/badge.svg?branch=main)](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/coverage.yml)
+[![CodeQL](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/codeql.yml)
+[![Coverage](./badges/jacoco.svg)](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/coverage.yml)
+[![Branches](./badges/branches.svg)](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/coverage.yml)
 
 A Quarkus-based Java microservice that monitors Cardano block producer nodes and provides automatic failover capabilities.
 
@@ -79,6 +83,8 @@ docker run -p 8080:8080 block-monitor-backend:native
 - `POST /api/control` - Start/stop monitoring (accepts `{"action": "START|STOP"}`)
 - `POST /api/active` - Manual server switching (accepts `{"active": "PRIMARY|SECONDARY"}`)
 - `GET /api/dns/current` - Get current DNS record IP and active server type
+
+**Swagger UI**: Available at `http://localhost:8080/q/swagger-ui/` when running in development mode
 
 ## Monitoring
 

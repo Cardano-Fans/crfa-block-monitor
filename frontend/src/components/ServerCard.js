@@ -1,5 +1,6 @@
-export default function ServerCard({ server, isActive, onSwitch }) {
-  const cardClass = `card ${isActive ? 'card-active' : ''}`;
+export default function ServerCard({ server, isActive, onSwitch, systemStatus }) {
+  const isSystemDown = systemStatus === 'NONE';
+  const cardClass = `card ${isActive ? 'card-active' : ''} ${isSystemDown && server.status === 'down' ? 'card-critical' : ''}`;
   
   return (
     <div className={cardClass}>
@@ -48,6 +49,15 @@ export default function ServerCard({ server, isActive, onSwitch }) {
               <div className="alert alert-success">
                 <strong>Currently Active</strong><br/>
                 This server is handling traffic
+              </div>
+            </div>
+          )}
+          
+          {isSystemDown && server.status === 'down' && (
+            <div className="text-center">
+              <div className="alert alert-danger">
+                <strong>System Critical</strong><br/>
+                No active server available
               </div>
             </div>
           )}

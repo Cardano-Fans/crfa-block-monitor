@@ -20,7 +20,7 @@ import static org.mockito.Mockito.*;
 class BlockProducerMonitorServiceSimpleTest {
 
     @Inject
-    BlockProducerMonitorService monitorService;
+    BlockProducerMonitorServiceIF monitorService;
 
     @Inject
     MonitorConfig config;
@@ -29,7 +29,7 @@ class BlockProducerMonitorServiceSimpleTest {
     NetworkService networkService;
 
     @InjectMock
-    DnsService dnsService;
+    DnsServiceIF dnsService;
 
     @BeforeEach
     void setUp() {
@@ -150,6 +150,7 @@ class BlockProducerMonitorServiceSimpleTest {
     void shouldDetectBothServersDown() {
         // Given
         when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(false);
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.NONE);
 
         // When
         ServerStatus status = monitorService.checkServers();
@@ -171,6 +172,9 @@ class BlockProducerMonitorServiceSimpleTest {
         // Given
         when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class))).thenReturn(true);
         when(dnsService.switchDnsToServer(ServerType.SECONDARY)).thenReturn(true);
+        // Mock DNS service to return SECONDARY after switch
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY)
+            .thenReturn(ServerType.SECONDARY); // Return SECONDARY after switch
 
         // When
         ApiResponse response = monitorService.manualSwitch(ServerType.SECONDARY);
@@ -192,6 +196,11 @@ class BlockProducerMonitorServiceSimpleTest {
         // Given - First manually switch to secondary
         when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
         when(dnsService.switchDnsToServer(any())).thenReturn(true);
+        // Mock DNS service to return PRIMARY -> SECONDARY -> PRIMARY sequence
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY)
+            .thenReturn(ServerType.SECONDARY) // After first switch
+            .thenReturn(ServerType.PRIMARY); // After second switch
+        
         monitorService.manualSwitch(ServerType.SECONDARY);
 
         // When - Switch back to primary
@@ -330,15 +339,14 @@ class BlockProducerMonitorServiceSimpleTest {
     // SCENARIO: Recovery from total outage - primary server comes back online first
     // Tests that system recovers to primary when it becomes available
     void shouldSwitchFromNoneToPrimaryWhenPrimaryComesUp() {
-        // Given - Start with both servers down (NONE state)
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(false);
-        monitorService.checkServers(); // This should set currentActive to NONE
-        
-        // When - Primary comes up
+        // Given - DNS service returns NONE (no active server)
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.NONE);
+        // Primary comes up, secondary stays down
         when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class))).thenReturn(true);
         when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class))).thenReturn(false);
         when(dnsService.switchDnsToServer(ServerType.PRIMARY)).thenReturn(true);
         
+        // When
         ServerStatus status = monitorService.checkServers();
 
         // Then - Should switch to PRIMARY
@@ -352,14 +360,13 @@ class BlockProducerMonitorServiceSimpleTest {
     // SCENARIO: Recovery from total outage - both servers come back online simultaneously
     // Tests that primary is chosen when both are available after NONE state
     void shouldPreferPrimaryWhenBothComeUpFromNone() {
-        // Given - Start with both servers down (NONE state)
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(false);
-        monitorService.checkServers(); // This should set currentActive to NONE
-        
-        // When - Both servers come up
+        // Given - DNS service returns NONE (no active server)
+        when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.NONE);
+        // Both servers come up
         when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
         when(dnsService.switchDnsToServer(ServerType.PRIMARY)).thenReturn(true);
         
+        // When
         ServerStatus status = monitorService.checkServers();
 
         // Then - Should choose PRIMARY (not SECONDARY)
