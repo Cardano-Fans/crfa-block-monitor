@@ -1,4 +1,4 @@
-# Block Monitor Backend
+# Block Producer Monitoring Backend
 
 ![Preview](preview.webp)
 
