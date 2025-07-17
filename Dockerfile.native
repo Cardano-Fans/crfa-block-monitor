@@ -23,7 +23,7 @@ USER quarkus
 WORKDIR /code
 
 # Build the native executable
-RUN ./gradlew build -Dquarkus.native.enabled=true -Dquarkus.package.jar.enabled=false -x test -x integrationTest
+RUN ./gradlew build -Dquarkus.native.enabled=true -Dquarkus.profile=prod -Dquarkus.package.jar.enabled=false -x test -x integrationTest
 
 # Runtime stage
 FROM quay.io/quarkus/quarkus-micro-image:2.0

@@ -26,7 +26,7 @@ class BlockProducerMonitorServiceSimpleTest {
     MonitorConfig config;
 
     @InjectMock
-    NetworkService networkService;
+    NetworkServiceIF networkService;
 
     @InjectMock
     DnsServiceIF dnsService;
@@ -84,8 +84,8 @@ class BlockProducerMonitorServiceSimpleTest {
     // Verifies the system correctly identifies healthy servers and maintains primary operation
     void shouldReturnCorrectStatusWhenBothServersHealthy() {
         // Given
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class))).thenReturn(true);
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class))).thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
 
         // When
         ServerStatus status = monitorService.checkServers();
@@ -107,8 +107,8 @@ class BlockProducerMonitorServiceSimpleTest {
     // Tests the system's ability to detect when the primary server becomes unavailable
     void shouldDetectPrimaryServerDown() {
         // Given
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class))).thenReturn(false);
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class))).thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.DOWN);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
 
         // When
         ServerStatus status = monitorService.checkServers();
@@ -128,8 +128,8 @@ class BlockProducerMonitorServiceSimpleTest {
     // Tests monitoring of backup server when primary server is functioning normally
     void shouldDetectSecondaryServerDown() {
         // Given
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class))).thenReturn(true);
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class))).thenReturn(false);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.DOWN);
 
         // When
         ServerStatus status = monitorService.checkServers();
@@ -149,7 +149,8 @@ class BlockProducerMonitorServiceSimpleTest {
     // Tests graceful handling when no servers are available (should not attempt failover)
     void shouldDetectBothServersDown() {
         // Given
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(false);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.DOWN);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.DOWN);
         when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.NONE);
 
         // When
@@ -257,10 +258,10 @@ class BlockProducerMonitorServiceSimpleTest {
     // Tests resilience when network connectivity checks encounter unexpected errors
     void shouldHandleNetworkServiceExceptionsGracefully() {
         // Given
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY))
             .thenThrow(new RuntimeException("Network error"));
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY))
+            .thenReturn(ServerHealthStatus.UP);
 
         // When & Then - Should not throw exception
         ServerStatus status = assertDoesNotThrow(() -> monitorService.checkServers());
@@ -278,7 +279,8 @@ class BlockProducerMonitorServiceSimpleTest {
     // Tests that the service correctly reads and exposes configuration values from test profile
     void shouldValidateConfigurationValues() {
         // Given
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
 
         // When
         ServerStatus status = monitorService.checkServers();
@@ -299,7 +301,8 @@ class BlockProducerMonitorServiceSimpleTest {
     // Tests that repeated server checks maintain consistent state while updating timestamps
     void shouldMaintainStateConsistencyAcrossMultipleChecks() {
         // Given
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
 
         // When
         ServerStatus status1 = monitorService.checkServers();
@@ -321,8 +324,8 @@ class BlockProducerMonitorServiceSimpleTest {
     // Tests that secondary is only used when primary is down
     void shouldFavorPrimaryOverSecondary() {
         // Given - Both servers are up
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class))).thenReturn(true);
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class))).thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
         when(dnsService.switchDnsToServer(any())).thenReturn(true);
 
         // When - Starting from NONE state (both servers down scenario)
@@ -342,8 +345,8 @@ class BlockProducerMonitorServiceSimpleTest {
         // Given - DNS service returns NONE (no active server)
         when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.NONE);
         // Primary comes up, secondary stays down
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class))).thenReturn(true);
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class))).thenReturn(false);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.DOWN);
         when(dnsService.switchDnsToServer(ServerType.PRIMARY)).thenReturn(true);
         
         // When
@@ -363,7 +366,8 @@ class BlockProducerMonitorServiceSimpleTest {
         // Given - DNS service returns NONE (no active server)
         when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.NONE);
         // Both servers come up
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
         when(dnsService.switchDnsToServer(ServerType.PRIMARY)).thenReturn(true);
         
         // When

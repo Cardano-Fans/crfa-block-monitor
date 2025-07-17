@@ -32,7 +32,7 @@ class BlockProducerMonitorServiceScenarioTest {
     MonitorConfig config;
 
     @InjectMock
-    NetworkService networkService;
+    NetworkServiceIF networkService;
 
     @InjectMock
     DnsServiceIF dnsService;
@@ -56,10 +56,10 @@ class BlockProducerMonitorServiceScenarioTest {
     // Tests full failover cycle: detection -> wait period -> DNS switch -> stable secondary operation
     void scenarioPrimaryServerPermanentFailure() throws InterruptedException {
         // Given: Primary server fails permanently
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
-            .thenReturn(false);
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY))
+            .thenReturn(ServerHealthStatus.DOWN);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY))
+            .thenReturn(ServerHealthStatus.UP);
         when(dnsService.switchDnsToServer(ServerType.SECONDARY)).thenReturn(true);
         // Mock DNS service to return SECONDARY after successful switch
         when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY)
@@ -93,8 +93,10 @@ class BlockProducerMonitorServiceScenarioTest {
     // Tests safety feature that prevents failover when no servers are reachable (avoid split-brain)
     void scenarioNetworkPartitionCausingFalsePositive() throws InterruptedException {
         // Given: Network partition causes both servers to appear down
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class)))
-            .thenReturn(false);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY))
+            .thenReturn(ServerHealthStatus.DOWN);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY))
+            .thenReturn(ServerHealthStatus.DOWN);
         // Mock DNS service to return NONE when both servers are down
         when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.NONE);
         // Using test config failover delay of 30s
@@ -122,10 +124,10 @@ class BlockProducerMonitorServiceScenarioTest {
     // Tests graceful handling of DNS update failures and retry behavior
     void scenarioDnsApiOutageDuringFailover() throws InterruptedException {
         // Given: Primary is down, secondary is up, but DNS API is failing
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
-            .thenReturn(false);
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY))
+            .thenReturn(ServerHealthStatus.DOWN);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY))
+            .thenReturn(ServerHealthStatus.UP);
         when(dnsService.switchDnsToServer(ServerType.SECONDARY)).thenReturn(false);
         // Using test config failover delay of 30s
 
@@ -156,6 +158,10 @@ class BlockProducerMonitorServiceScenarioTest {
     // Verifies proper error handling for invalid switches (same server) vs valid switches
     void scenarioManualSwitchToEachServerType(ServerType targetServer) {
         // Given: Both servers are healthy
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY))
+            .thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY))
+            .thenReturn(ServerHealthStatus.UP);
         when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class)))
             .thenReturn(true);
         when(dnsService.switchDnsToServer(any())).thenReturn(true);
@@ -194,10 +200,10 @@ class BlockProducerMonitorServiceScenarioTest {
     void scenarioDifferentFailoverDelayConfigurations(long delaySeconds) throws InterruptedException {
         // Given: Different failover delays
         // Using test config failover delay of 30s
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
-            .thenReturn(false);
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY))
+            .thenReturn(ServerHealthStatus.DOWN);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY))
+            .thenReturn(ServerHealthStatus.UP);
 
         // When: Monitor detects primary down
         ServerStatus status = monitorService.checkServers();
@@ -216,14 +222,14 @@ class BlockProducerMonitorServiceScenarioTest {
     // Tests stability features that prevent rapid failover/failback cycles (flap protection)
     void scenarioServerFlapping() throws InterruptedException {
         // Given: Server that flaps between up and down
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
-            .thenReturn(false) // First check: down
-            .thenReturn(true)  // Second check: up
-            .thenReturn(false) // Third check: down
-            .thenReturn(true)  // Fourth check: up
-            .thenReturn(false); // Fifth check: down
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY))
+            .thenReturn(ServerHealthStatus.DOWN) // First check: down
+            .thenReturn(ServerHealthStatus.UP)   // Second check: up
+            .thenReturn(ServerHealthStatus.DOWN) // Third check: down
+            .thenReturn(ServerHealthStatus.UP)   // Fourth check: up
+            .thenReturn(ServerHealthStatus.DOWN); // Fifth check: down
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY))
+            .thenReturn(ServerHealthStatus.UP);
         // Using test config failover delay of 30s
 
         // Mock DNS service to consistently return PRIMARY for flapping scenario
@@ -257,8 +263,10 @@ class BlockProducerMonitorServiceScenarioTest {
     // Tests the full automated disaster recovery cycle with proper timing delays
     void scenarioGradualDegradationAndRecovery() throws InterruptedException {
         // Given: System starts healthy
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY))
+            .thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY))
+            .thenReturn(ServerHealthStatus.UP);
         when(dnsService.switchDnsToServer(any())).thenReturn(true);
         // Using test config failover delay of 30s
         // Using test config failback delay of 60s
@@ -276,8 +284,8 @@ class BlockProducerMonitorServiceScenarioTest {
         assertEquals(ServerType.PRIMARY, phase1.currentActive());
 
         // Phase 2: Primary degrades
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
-            .thenReturn(false);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY))
+            .thenReturn(ServerHealthStatus.DOWN);
         
         ServerStatus phase2 = monitorService.checkServers();
         assertEquals(NextAction.WAITING_FOR_FAILOVER, phase2.nextAction().getAction());
@@ -288,8 +296,8 @@ class BlockProducerMonitorServiceScenarioTest {
         assertEquals(ServerType.SECONDARY, phase3.currentActive());
 
         // Phase 3: Primary recovers
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY))
+            .thenReturn(ServerHealthStatus.UP);
         
         ServerStatus phase4 = monitorService.checkServers();
         assertEquals(NextAction.WAITING_FOR_FAILBACK, phase4.nextAction().getAction());
@@ -311,8 +319,10 @@ class BlockProducerMonitorServiceScenarioTest {
     // Tests configuration immutability and requirement for restart to apply changes
     void scenarioConfigurationChangesDuringRuntime() {
         // Given: Initial configuration
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY))
+            .thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY))
+            .thenReturn(ServerHealthStatus.UP);
 
         ServerStatus initialStatus = monitorService.checkServers();
         assertEquals("test-primary", initialStatus.config().primary().name());
@@ -335,8 +345,10 @@ class BlockProducerMonitorServiceScenarioTest {
     // Critical for proper timing-based failover/failback decisions
     void scenarioTimestampAccuracyVerification() throws InterruptedException {
         // Given: System is running
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY))
+            .thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY))
+            .thenReturn(ServerHealthStatus.UP);
 
         // When: Multiple checks with delays
         Instant before1 = Instant.now();

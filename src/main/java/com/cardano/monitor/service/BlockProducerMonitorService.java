@@ -2,11 +2,9 @@ package com.cardano.monitor.service;
 
 import com.cardano.monitor.config.MonitorConfig;
 import com.cardano.monitor.model.*;
-import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -21,7 +19,7 @@ public class BlockProducerMonitorService implements BlockProducerMonitorServiceI
     MonitorConfig config;
     
     @Inject
-    NetworkService networkService;
+    NetworkServiceIF networkService;
     
     @Inject
     DnsServiceIF dnsService;
@@ -40,31 +38,24 @@ public class BlockProducerMonitorService implements BlockProducerMonitorServiceI
         // Get current active server from DNS (single source of truth)
         ServerType currentActive = dnsService.detectCurrentActiveServer();
         log.info("Checking servers..., currentActive: {}", currentActive);
+
+        boolean primaryUp = false;
+        boolean secondaryUp = false;
         
-        boolean primaryUp;
         try {
-            primaryUp = networkService.checkHostPort(
-                config.primary().host(),
-                config.primary().port(),
-                config.timing().connectionTimeout()
-            );
+            primaryUp = networkService.getServerHealthStatus(ServerType.PRIMARY) == ServerHealthStatus.UP;
         } catch (Exception e) {
-            log.warn("Error checking primary server: {}", e.getMessage());
+            log.error("Error checking primary server health: {}", e.getMessage());
             primaryUp = false;
         }
         
-        boolean secondaryUp;
         try {
-            secondaryUp = networkService.checkHostPort(
-                config.secondary().host(),
-                config.secondary().port(),
-                config.timing().connectionTimeout()
-            );
+            secondaryUp = networkService.getServerHealthStatus(ServerType.SECONDARY) == ServerHealthStatus.UP;
         } catch (Exception e) {
-            log.warn("Error checking secondary server: {}", e.getMessage());
+            log.error("Error checking secondary server health: {}", e.getMessage());
             secondaryUp = false;
         }
-        
+
         // Track primary downtime
         if (!primaryUp) {
             primaryDownSince.compareAndSet(null, currentTime);
@@ -277,8 +268,8 @@ public class BlockProducerMonitorService implements BlockProducerMonitorServiceI
         return new ServerStatus(
             running.get() ? DaemonStatus.RUNNING : DaemonStatus.STOPPED,
             dnsService.detectCurrentActiveServer(),
-            ServerHealthStatus.UNKNOWN, // Will be updated by next check
-            ServerHealthStatus.UNKNOWN, // Will be updated by next check
+            networkService.getServerHealthStatus(ServerType.PRIMARY),
+            networkService.getServerHealthStatus(ServerType.SECONDARY),
             lastCheck.get(),
             primaryDownSince.get(),
             primaryUpSince.get(),

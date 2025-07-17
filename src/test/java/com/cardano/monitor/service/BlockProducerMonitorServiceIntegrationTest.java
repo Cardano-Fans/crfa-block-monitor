@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
     MonitorConfig config;
 
     @InjectMock
-    NetworkService networkService;
+    NetworkServiceIF networkService;
 
     @InjectMock
     DnsServiceIF dnsService;
@@ -45,6 +45,10 @@ import static org.mockito.Mockito.*;
         
         // Mock DNS service to return PRIMARY by default
         when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY);
+        
+        // Default mocks for health status
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
     }
 
     @Test
@@ -56,10 +60,10 @@ import static org.mockito.Mockito.*;
     void shouldPerformCompleteFailoverAndFailbackCycle() throws InterruptedException {
         // Given
         AtomicInteger primaryHealthState = new AtomicInteger(1); // 1 = UP, 0 = DOWN
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
-            .thenAnswer(invocation -> primaryHealthState.get() == 1);
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY))
+            .thenAnswer(invocation -> primaryHealthState.get() == 1 ? ServerHealthStatus.UP : ServerHealthStatus.DOWN);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY))
+            .thenReturn(ServerHealthStatus.UP);
         when(dnsService.switchDnsToServer(any())).thenReturn(true);
         
         // Mock DNS service for complete cycle
@@ -112,14 +116,14 @@ import static org.mockito.Mockito.*;
     void shouldHandleRapidServerStateChanges() throws InterruptedException {
         // Given
         AtomicInteger checkCount = new AtomicInteger(0);
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY))
             .thenAnswer(invocation -> {
                 int count = checkCount.incrementAndGet();
                 // Simulate flapping: down for 2 checks, up for 2 checks, repeat
-                return (count % 4) >= 2;
+                return (count % 4) >= 2 ? ServerHealthStatus.UP : ServerHealthStatus.DOWN;
             });
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY))
+            .thenReturn(ServerHealthStatus.UP);
 
         // When - Multiple rapid checks
         for (int i = 0; i < 10; i++) {
@@ -146,6 +150,8 @@ import static org.mockito.Mockito.*;
     @Timeout(10)
     void shouldHandleConcurrentManualAndAutomaticOperations() throws InterruptedException {
         // Given
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
         when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
         when(dnsService.switchDnsToServer(any())).thenReturn(true);
         // Mock DNS service for concurrent operations
@@ -204,6 +210,8 @@ import static org.mockito.Mockito.*;
     @Timeout(15)
     void shouldMaintainStateConsistencyUnderStress() throws InterruptedException {
         // Given
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
         when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
         when(dnsService.switchDnsToServer(any())).thenReturn(true);
 
@@ -259,10 +267,8 @@ import static org.mockito.Mockito.*;
     @Timeout(60)
     void shouldHandleDnsServiceIntermittentFailures() throws InterruptedException {
         // Given
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
-            .thenReturn(false);
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.DOWN);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
         
         // DNS service fails first two times, then succeeds
         when(dnsService.switchDnsToServer(ServerType.SECONDARY))
@@ -310,6 +316,8 @@ import static org.mockito.Mockito.*;
     @Timeout(10)
     void shouldHandleServiceRestartScenarios() {
         // Given
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
         when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
         when(dnsService.switchDnsToServer(any())).thenReturn(true);
 
@@ -349,10 +357,9 @@ import static org.mockito.Mockito.*;
         // Given - Very short delays for testing
         // Using test config timing values
 
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
-            .thenReturn(false);
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.DOWN);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
         when(dnsService.switchDnsToServer(any())).thenReturn(true);
 
         // When - First check

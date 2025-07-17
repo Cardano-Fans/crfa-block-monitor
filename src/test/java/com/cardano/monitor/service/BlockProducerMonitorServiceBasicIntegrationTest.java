@@ -28,7 +28,7 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
     MonitorConfig config;
 
     @InjectMock
-    NetworkService networkService;
+    NetworkServiceIF networkService;
 
     @InjectMock
     DnsServiceIF dnsService;
@@ -52,10 +52,8 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
     // Validates happy path component interaction and proper dependency injection
     void shouldIntegrateWithAllComponentsForBasicStatusCheck() {
         // Given
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
-            .thenReturn(true);
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
 
         // When
         ServerStatus status = monitorService.checkServers();
@@ -70,8 +68,8 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
         assertNotNull(status.lastCheck());
         
         // Verify network service was called with correct config
-        verify(networkService).checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class));
-        verify(networkService).checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class));
+        verify(networkService).getServerHealthStatus(ServerType.PRIMARY);
+        verify(networkService).getServerHealthStatus(ServerType.SECONDARY);
     }
 
     @Test
@@ -81,7 +79,8 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
     // Validates proper state transitions and daemon status reporting
     void shouldHandleServiceLifecycleIntegration() {
         // Given
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
 
         // Service should already be running by default
         assertEquals(DaemonStatus.RUNNING, monitorService.getStatus().daemonStatus());
@@ -165,10 +164,8 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
     // Validates proper failure detection and state tracking integration
     void shouldHandleNetworkServiceFailureIntegration() {
         // Given
-        when(networkService.checkHostPort(eq(config.primary().host()), eq(config.primary().port()), any(Duration.class)))
-            .thenReturn(false);
-        when(networkService.checkHostPort(eq(config.secondary().host()), eq(config.secondary().port()), any(Duration.class)))
-            .thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.DOWN);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
 
         // When
         ServerStatus status = monitorService.checkServers();
@@ -187,7 +184,8 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
     // Validates thread safety and state consistency for basic concurrent access
     void shouldHandleConcurrentOperationsIntegration() throws InterruptedException {
         // Given
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
         when(dnsService.switchDnsToServer(any())).thenReturn(true);
         // Mock DNS service to handle multiple calls (default to PRIMARY, then SECONDARY after switch)
         when(dnsService.detectCurrentActiveServer()).thenReturn(ServerType.PRIMARY, ServerType.PRIMARY, ServerType.SECONDARY);
@@ -240,7 +238,8 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
     // Validates that test profile configuration values are correctly injected and accessible
     void shouldValidateConfigurationIntegration() {
         // Given
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
 
         // When
         ServerStatus status = monitorService.checkServers();
@@ -262,7 +261,8 @@ class BlockProducerMonitorServiceBasicIntegrationTest {
     // Validates integration stability and proper state management across multiple calls
     void shouldHandleMultipleStatusChecksConsistently() {
         // Given
-        when(networkService.checkHostPort(anyString(), anyInt(), any(Duration.class))).thenReturn(true);
+        when(networkService.getServerHealthStatus(ServerType.PRIMARY)).thenReturn(ServerHealthStatus.UP);
+        when(networkService.getServerHealthStatus(ServerType.SECONDARY)).thenReturn(ServerHealthStatus.UP);
 
         // When
         ServerStatus status1 = monitorService.checkServers();
