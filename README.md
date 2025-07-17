@@ -4,10 +4,7 @@
 
 [![Build and Unit Tests](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/build-and-test.yml/badge.svg?branch=main)](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/build-and-test.yml)
 [![Integration Tests](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/integration-tests.yml/badge.svg?branch=main)](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/integration-tests.yml)
-[![Code Coverage](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/coverage.yml/badge.svg?branch=main)](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/coverage.yml)
 [![CodeQL](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/codeql.yml)
-[![Coverage](./badges/jacoco.svg)](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/coverage.yml)
-[![Branches](./badges/branches.svg)](https://github.com/Cardano-Fans/crfa-block-monitor/actions/workflows/coverage.yml)
 
 A Quarkus-based Java microservice that monitors Cardano block producer nodes and provides automatic failover capabilities.
 
