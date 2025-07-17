@@ -8,7 +8,7 @@
     log:
       level: INFO
       console:
-        json: false
+        format: "%d{HH:mm:ss} %-5p [%c{2.}] (%t) %s%e%n"
     container-image:
       build: false
     rest-client:
@@ -35,7 +35,15 @@
       record-type: A
       record-ttl: 60
     timing:
-      check-interval: 10s
+      check-interval: 1s
+      failover-delay: 2s
+      failback-delay: 3s
+      connection-timeout: 1s
+
+"%scenario-test":
+  monitor:
+    timing:
+      check-interval: 1s
       failover-delay: 30s
       failback-delay: 60s
-      connection-timeout: 2s
+      connection-timeout: 1s

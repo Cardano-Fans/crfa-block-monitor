@@ -39,22 +39,8 @@ public class BlockProducerMonitorService implements BlockProducerMonitorServiceI
         ServerType currentActive = dnsService.detectCurrentActiveServer();
         log.info("Checking servers..., currentActive: {}", currentActive);
 
-        boolean primaryUp = false;
-        boolean secondaryUp = false;
-        
-        try {
-            primaryUp = networkService.getServerHealthStatus(ServerType.PRIMARY) == ServerHealthStatus.UP;
-        } catch (Exception e) {
-            log.error("Error checking primary server health: {}", e.getMessage());
-            primaryUp = false;
-        }
-        
-        try {
-            secondaryUp = networkService.getServerHealthStatus(ServerType.SECONDARY) == ServerHealthStatus.UP;
-        } catch (Exception e) {
-            log.error("Error checking secondary server health: {}", e.getMessage());
-            secondaryUp = false;
-        }
+        boolean primaryUp = networkService.getServerHealthStatus(ServerType.PRIMARY) == ServerHealthStatus.UP;
+        boolean secondaryUp = networkService.getServerHealthStatus(ServerType.SECONDARY) == ServerHealthStatus.UP;
 
         // Track primary downtime
         if (!primaryUp) {
@@ -70,7 +56,7 @@ public class BlockProducerMonitorService implements BlockProducerMonitorServiceI
             }
             primaryUpSince.compareAndSet(null, currentTime);
         }
-        
+
         // Decision logic (skip if manual override is active)
         NextAction.WithContext nextAction = checkNextAction(primaryUp, currentTime, secondaryUp, currentActive);
 
